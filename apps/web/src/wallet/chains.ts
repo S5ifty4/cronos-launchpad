@@ -2,7 +2,7 @@ export const cronosTestnet = {
   id: 338,
   name: 'Cronos Testnet',
   nativeCurrency: { name: 'Cronos', symbol: 'TCRO', decimals: 18 },
-  rpcUrls: ['https://evm-t3.cronos.org'],
+  rpcUrls: ['https://evm-t3.cronos.com'],
   blockExplorerUrls: ['https://explorer.cronos.org/testnet'],
 } as const;
 

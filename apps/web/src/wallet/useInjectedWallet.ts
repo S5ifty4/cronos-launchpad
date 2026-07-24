@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { cronosTestnet, toHexChainId } from './chains';
 
+type SendTxRequest = { to?: `0x${string}`; value: bigint; data: `0x${string}`; ready: boolean };
+
 type EthereumProvider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on?: (event: string, handler: (...args: unknown[]) => void) => void;
@@ -46,9 +48,39 @@ export function useInjectedWallet() {
       await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: toHexChainId(cronosTestnet.id) }] });
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not switch network');
+      try {
+        await provider.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: toHexChainId(cronosTestnet.id),
+            chainName: cronosTestnet.name,
+            nativeCurrency: cronosTestnet.nativeCurrency,
+            rpcUrls: cronosTestnet.rpcUrls,
+            blockExplorerUrls: cronosTestnet.blockExplorerUrls,
+          }],
+        });
+        await refresh();
+      } catch (addErr) {
+        setError(addErr instanceof Error ? addErr.message : err instanceof Error ? err.message : 'Could not switch network');
+      }
     }
   }, [provider, refresh]);
+
+  const sendTransaction = useCallback(async (tx: SendTxRequest) => {
+    setError(undefined);
+    if (!provider || !address) { setError('Connect wallet first'); return undefined; }
+    if (!isCorrectChain) { setError(`Switch to ${cronosTestnet.name}`); return undefined; }
+    if (!tx.ready || !tx.to) { setError('Transaction is missing required launch config'); return undefined; }
+    try {
+      return await provider.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: address, to: tx.to, value: `0x${tx.value.toString(16)}`, data: tx.data }],
+      }) as `0x${string}`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Transaction rejected');
+      return undefined;
+    }
+  }, [provider, address, isCorrectChain]);
 
   useEffect(() => {
     void refresh();
@@ -60,5 +92,5 @@ export function useInjectedWallet() {
     return () => { provider.removeListener?.('accountsChanged', handleAccounts); provider.removeListener?.('chainChanged', handleChain); };
   }, [provider, refresh]);
 
-  return { address, chainId, connect, switchToCronosTestnet, isCorrectChain, hasWallet: Boolean(provider), error };
+  return { address, chainId, connect, switchToCronosTestnet, sendTransaction, isCorrectChain, hasWallet: Boolean(provider), error };
 }

@@ -11,6 +11,8 @@ export const launchpadFactoryAbi = [
       { name: 'totalSupply', type: 'uint256' },
       { name: 'graduationTarget', type: 'uint256' },
       { name: 'antiBotEnabled', type: 'bool' },
+      { name: 'antiBotDurationSeconds', type: 'uint64' },
+      { name: 'antiBotBaseLimitWei', type: 'uint256' },
       { name: 'vvsRouter', type: 'address' },
       { name: 'lpBeneficiary', type: 'address' },
       { name: 'lpLockDuration', type: 'uint256' },

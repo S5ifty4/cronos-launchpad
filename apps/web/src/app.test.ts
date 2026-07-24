@@ -15,5 +15,6 @@ describe('launchpad web model', () => {
     expect(tx.data.startsWith('0x')).toBe(true);
     expect(tx.value).toBe(250000000000000000000n);
     expect(tx.ready).toBe(false);
+    expect(tx.args).toHaveLength(12);
   });
 });

@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "deploy:check": "hardhat run scripts/check-env.ts",
     "deploy:local": "hardhat run scripts/deploy-local.ts",
+    "simulate:launch": "hardhat run scripts/simulate-launch-flow.ts",
     "deploy:cronos-testnet": "hardhat run scripts/deploy-cronos-testnet.ts --network cronosTestnet"
   },
   "devDependencies": {

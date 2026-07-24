@@ -12,3 +12,4 @@ typechain-types
 .vercel-cache
 
 contracts/deployments/local-*.json
+contracts/deployments/simulation-*.json

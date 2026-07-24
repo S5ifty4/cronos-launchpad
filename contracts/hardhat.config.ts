@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     cronosTestnet: {
       type: 'http',
       chainType: 'l1',
-      url: process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org',
+      url: process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.com',
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
   },

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { describeHandler, nextState } from '../src/index.js';
+import { summarizeSimulationProof } from '../src/poller.js';
 
 describe('indexer skeleton', () => {
   it('advances last indexed block from decoded events', () => {
@@ -13,5 +14,11 @@ describe('indexer skeleton', () => {
 
   it('maps event handlers', () => {
     assert.equal(describeHandler({ type: 'LpDeposited', lpToken: '0xlp', beneficiary: '0xben', amount: 1n, unlocksAt: 2n, blockNumber: 3n, txHash: '0xhash' }), 'record LP lock 0xlp');
+  });
+
+  it('summarizes local simulation proof completeness', () => {
+    const summary = summarizeSimulationProof({ expectedEvents: ['TokenCreated', 'TokenBought', 'TokenGraduated', 'LpDeposited'] });
+    assert.equal(summary.complete, true);
+    assert.equal(summary.lpDeposited, true);
   });
 });

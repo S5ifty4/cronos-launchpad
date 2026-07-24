@@ -3,16 +3,16 @@ import { cronosTestnet } from 'viem/chains';
 import { describeHandler, nextState, type DecodedLaunchpadEvent, type IndexerState } from './index.js';
 
 const factoryEvents = [
-  parseAbiItem('event TokenCreated(address indexed token,address indexed creator)'),
-  parseAbiItem('event TokenBought(address indexed token,address indexed buyer,uint256 croIn)'),
-  parseAbiItem('event TokenGraduated(address indexed token,address pair,address lpVault)'),
+  parseAbiItem('event TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address lpBeneficiary,uint64 lpLockDurationSeconds)'),
+  parseAbiItem('event TokenBought(address indexed token,address indexed buyer,uint256 croIn,uint256 reserveRaisedWei)'),
+  parseAbiItem('event TokenGraduated(address indexed token,address indexed creator,address indexed vvsRouter,address pair,address lpVault,uint256 reserveRaisedWei,uint256 tokenLiquidity,uint256 liquidity,uint256 lpUnlocksAt)'),
 ];
 const vaultEvents = [parseAbiItem('event LpDeposited(address indexed lpToken,address indexed beneficiary,uint256 amount,uint256 unlocksAt)')];
 
 export type PollerConfig = { rpcUrl: string; factoryAddress: Address; vaultAddress: Address; fromBlock: bigint; toBlock?: bigint };
 
 export function configFromEnv(env = process.env): PollerConfig {
-  const rpcUrl = env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org';
+  const rpcUrl = env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.com';
   const factoryAddress = env.LAUNCHPAD_FACTORY as Address | undefined;
   const vaultAddress = env.LP_VAULT as Address | undefined;
   if (!factoryAddress || !vaultAddress) throw new Error('Missing LAUNCHPAD_FACTORY or LP_VAULT');
@@ -32,6 +32,17 @@ export async function pollLogs(config: PollerConfig) {
   });
   const state: IndexerState = nextState({ chainId: cronosTestnet.id, lastIndexedBlock: config.fromBlock }, events);
   return { events, state, actions: events.map(describeHandler) };
+}
+
+export function summarizeSimulationProof(proof: { expectedEvents?: string[] }) {
+  const expected = new Set(proof.expectedEvents ?? []);
+  return {
+    tokenCreated: expected.has('TokenCreated'),
+    tokenBought: expected.has('TokenBought'),
+    tokenGraduated: expected.has('TokenGraduated'),
+    lpDeposited: expected.has('LpDeposited'),
+    complete: ['TokenCreated', 'TokenBought', 'TokenGraduated', 'LpDeposited'].every((event) => expected.has(event)),
+  };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

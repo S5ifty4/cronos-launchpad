@@ -27,6 +27,7 @@ pnpm build
 pnpm web:dev
 pnpm contracts:test
 pnpm --filter @cronos-launchpad/contracts deploy:local
+pnpm --filter @cronos-launchpad/contracts simulate:launch
 pnpm --filter @cronos-launchpad/api dev
 LAUNCHPAD_FACTORY=0x... LP_VAULT=0x... pnpm --filter @cronos-launchpad/indexer poll:dry-run
 pnpm --filter @cronos-launchpad/contracts deploy:check

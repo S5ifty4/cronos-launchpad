@@ -2,12 +2,19 @@
 
 This repo is ready to deploy once a local deployer wallet is configured. Do **not** paste private keys into chat or commit `.env`.
 
+Official docs used for this config:
+
+- MetaMask/testnet config: https://docs.cronos.com/for-users/metamask.md
+- Public RPC endpoints: https://docs.cronos.com/for-dapp-developers/chain-integration/public-rpc-endpoints.md
+- Testnet faucet: https://docs.cronos.com/for-users/testnet-faucet.md
+- Contract deployment: https://docs.cronos.com/for-dapp-developers/cronos-smart-contract/contract-deployment.md
+
 ## Required inputs
 
 Create `contracts/.env` or export these in your shell before deployment:
 
 ```bash
-CRONOS_TESTNET_RPC_URL=https://evm-t3.cronos.org
+CRONOS_TESTNET_RPC_URL=https://evm-t3.cronos.com
 DEPLOYER_PRIVATE_KEY=0x...
 VVS_TESTNET_ROUTER=0x...
 ```

@@ -8,6 +8,8 @@ export type CreateTokenForm = {
   graduationTargetCro: string;
   initialBuyCro: string;
   antiBotEnabled: boolean;
+  antiBotDurationSeconds?: bigint;
+  antiBotBaseLimitCro?: string;
   vvsRouter?: `0x${string}`;
   lpBeneficiary?: `0x${string}`;
 };
@@ -32,6 +34,8 @@ export function prepareCreateTokenTx(form: CreateTokenForm) {
     oneBillion,
     parseEther(normalizeNumber(form.graduationTargetCro)),
     form.antiBotEnabled,
+    form.antiBotDurationSeconds ?? 600n,
+    parseEther(normalizeNumber(form.antiBotBaseLimitCro ?? '1000')),
     vvsRouter,
     lpBeneficiary,
     oneHundredEightyDays,

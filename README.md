@@ -1,0 +1,29 @@
+# Cronos Launchpad MVP
+
+Cronos-native token launchpad prototype focused on:
+
+- anti-vamp name/symbol protection,
+- anti-snipe launch limits,
+- transparent VVS graduation path,
+- launch board + trust panel UX.
+
+## Workspaces
+
+- `packages/core` — tested TypeScript rules/math shared by backend and UI.
+- `contracts` — Solidity launchpad/name-registry/LP-lock scaffold.
+- `apps/web` — Vite React MVP UI.
+- `docs/lp-policy.md` — recommendation: VVS V2 WCRO pair with LP tokens routed to a public 180-day timelock vault.
+
+## Commands
+
+```bash
+pnpm install
+pnpm test
+pnpm build
+pnpm web:dev
+pnpm contracts:test
+```
+
+## Current chain recommendation
+
+Use Cronos testnet now. Keep VVS router/factory addresses configurable until Cronos/VVS confirms the exact whitelisting requirements and testnet/mainnet addresses.

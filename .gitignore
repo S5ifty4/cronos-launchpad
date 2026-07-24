@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example
+artifacts
+cache
+typechain-types
+*.tsbuildinfo
+.vercel
+.vercel-cache

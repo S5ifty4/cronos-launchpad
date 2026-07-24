@@ -1,0 +1,15 @@
+{
+  "name": "cronos-launchpad-mvp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cronos-native launchpad MVP with anti-vamp name protection and VVS graduation path.",
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "test": "pnpm --recursive test",
+    "build": "pnpm --recursive build",
+    "typecheck": "pnpm --recursive typecheck",
+    "web:dev": "pnpm --filter @cronos-launchpad/web dev",
+    "contracts:test": "pnpm --filter @cronos-launchpad/contracts test"
+  },
+  "workspaces": ["apps/*", "packages/*", "contracts"]
+}

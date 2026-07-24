@@ -1,0 +1,20 @@
+{
+  "name": "@cronos-launchpad/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "hardhat test",
+    "build": "hardhat compile",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",
+    "@types/node": "^24.10.1",
+    "hardhat": "^3.0.15",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "viem": "^2.43.2"
+  }
+}

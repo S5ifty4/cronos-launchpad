@@ -10,3 +10,5 @@ typechain-types
 *.tsbuildinfo
 .vercel
 .vercel-cache
+
+contracts/deployments/local-*.json

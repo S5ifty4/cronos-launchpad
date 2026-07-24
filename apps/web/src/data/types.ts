@@ -1,0 +1,29 @@
+export type LaunchStatus = 'Launching' | 'Near graduation' | 'Graduated';
+
+export type Launch = {
+  address: string;
+  chainId: number;
+  name: string;
+  symbol: string;
+  creator: string;
+  progress: number;
+  reserveRaised: string;
+  graduationTarget: string;
+  age: string;
+  antiBot: boolean;
+  protectedName: boolean;
+  vvsGraduation: boolean;
+  taxBips: number;
+  marketCap: string;
+  volume24h: string;
+  holders: string;
+  description: string;
+  status: LaunchStatus;
+  socials: string[];
+  color: string;
+};
+
+export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string };
+export type HolderSnapshot = { wallet: string; share: string; note: string };
+export type CreatorProfile = { wallet: string; launches: string; graduated: string; reports: string; totalVolume: string; socials: string[] };
+export type ProofPackage = { label: string; value: string; status: 'ready' | 'pending' }[];

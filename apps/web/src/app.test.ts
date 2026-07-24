@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { assessTokenIdentity } from '@cronos-launchpad/core';
-import { launches } from './mockData';
+import { getLaunches } from './data/api';
 
 describe('launchpad web model', () => {
   it('uses shared anti-vamp rules for launch form preflight', () => {
-    const result = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK2' }, launches);
+    const result = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK2' }, getLaunches());
     expect(result.status).toBe('blocked');
     expect(result.reasons).toContain('DUPLICATE_NAME');
   });

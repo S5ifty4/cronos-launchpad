@@ -26,6 +26,7 @@ pnpm test
 pnpm build
 pnpm web:dev
 pnpm contracts:test
+pnpm --filter @cronos-launchpad/contracts deploy:local
 pnpm --filter @cronos-launchpad/contracts deploy:check
 # after deployer + VVS testnet router are configured:
 pnpm --filter @cronos-launchpad/contracts deploy:cronos-testnet

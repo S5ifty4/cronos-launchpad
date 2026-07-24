@@ -3,7 +3,7 @@ export const cronosTestnet = {
   name: 'Cronos Testnet',
   nativeCurrency: { name: 'Cronos', symbol: 'TCRO', decimals: 18 },
   rpcUrls: ['https://evm-t3.cronos.com'],
-  blockExplorerUrls: ['https://explorer.cronos.org/testnet'],
+  blockExplorerUrls: ['https://explorer.cronos.com/testnet'],
 } as const;
 
 export function shortAddress(address?: string) {

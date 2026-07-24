@@ -14,7 +14,9 @@ Cronos-native token launchpad prototype focused on:
 - `apps/web` — Vite React MVP UI.
 - `docs/lp-policy.md` — recommendation: VVS V2 WCRO pair with LP tokens routed to a public 180-day timelock vault.
 - `docs/testnet-readiness.md` — deploy prerequisites, scripts, VVS unknowns, and proof-package checklist.
-- `docs/design-benchmark.md` — UX notes from Robinfun, WolfSwap, pump.fun, and Cronos brand alignment.
+- `docs/design-benchmark.md` — internal UX benchmark notes and Cronos brand alignment; public pages should not mention benchmarked competitors.
+- `docs/backend-indexer-architecture.md` — event indexing, DB schema, worker loop, and API shape.
+- `docs/trust-admin-creator-proof.md` — trust panel, moderation, creator profile, and proof-package specs.
 
 ## Commands
 

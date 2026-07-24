@@ -10,8 +10,8 @@ if (missing.length) {
   throw new Error(`Missing required env vars: ${missing.join(', ')}`);
 }
 
-const reservedNames = ['Cronos', 'Crypto.com', 'VVS Finance', 'Tectonic', 'Fulcrom', 'WolfSwap'];
-const reservedSymbols = ['CRO', 'WCRO', 'VVS', 'TONIC', 'FUL', 'WOLF', 'PACK'];
+const reservedNames = ['Cronos', 'Crypto.com', 'VVS Finance', 'Tectonic', 'Fulcrom'];
+const reservedSymbols = ['CRO', 'WCRO', 'VVS', 'TONIC', 'FUL', 'PACK'];
 const hash = (value: string) => keccak256(stringToBytes(value));
 
 const { viem } = await network.connect();

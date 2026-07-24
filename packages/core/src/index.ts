@@ -47,11 +47,9 @@ const RESERVED_NAMES = new Set([
   'vvs finance',
   'tectonic',
   'fulcrom',
-  'wolfswap',
-  'wolf swap',
 ]);
 
-const RESERVED_SYMBOLS = new Set(['CRO', 'WCRO', 'VVS', 'TONIC', 'FUL', 'WOLF', 'PACK']);
+const RESERVED_SYMBOLS = new Set(['CRO', 'WCRO', 'VVS', 'TONIC', 'FUL', 'PACK']);
 
 function foldHomoglyphs(input: string): string {
   return Array.from(input)

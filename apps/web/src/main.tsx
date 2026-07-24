@@ -4,7 +4,29 @@ import { assessTokenIdentity, calculateGraduationProgress, getAntiBotBuyLimit } 
 import { launches, type LaunchCard } from './mockData';
 import './styles.css';
 
-function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'good' | 'warn' | 'bad' | 'neutral' | 'blue' }) {
+type BadgeTone = 'good' | 'warn' | 'bad' | 'neutral' | 'blue';
+
+const trades = [
+  { side: 'Buy', wallet: '0x8f2a...c5a2', amount: '222 CRO', tokens: '14,204 CROJACK', age: '12s' },
+  { side: 'Buy', wallet: '0x2109...771d', amount: '80 CRO', tokens: '5,092 CROJACK', age: '44s' },
+  { side: 'Sell', wallet: '0x7b81...aa10', amount: '31 CRO', tokens: '1,840 CROJACK', age: '2m' },
+  { side: 'Buy', wallet: '0x5d40...901e', amount: '410 CRO', tokens: '25,193 CROJACK', age: '4m' },
+];
+
+const holders = [
+  { wallet: 'LP vault', share: '34.2%', note: 'locked on graduation' },
+  { wallet: '0x6819...a923', share: '8.6%', note: 'creator' },
+  { wallet: '0x2109...771d', share: '4.1%', note: 'buyer' },
+  { wallet: '0x5d40...901e', share: '3.7%', note: 'buyer' },
+];
+
+const adminQueue = [
+  ['Reserved-name review', 'CRO Bank', 'blocked'],
+  ['Similar-symbol warning', 'CR0X', 'needs review'],
+  ['Report queue', '2 launch reports', 'open'],
+];
+
+function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: BadgeTone }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
 }
 
@@ -50,16 +72,27 @@ function LaunchCardView({ launch }: { launch: LaunchCard }) {
   );
 }
 
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div className="metric"><strong>{value}</strong><span>{label}</span></div>;
+}
+
+function ToggleRow({ label, enabled = true }: { label: string; enabled?: boolean }) {
+  return <div className="toggleRow"><span>{label}</span><i className={enabled ? 'toggle on' : 'toggle'} /></div>;
+}
+
 function App() {
-  const [name, setName] = useState('Teen W0lf');
-  const [symbol, setSymbol] = useState('TEENW');
-  const existingIdentities = useMemo(
-    () => [...launches, { ...launches[0], name: 'Teen Wolf', symbol: 'TWOLF', creator: '0xe...F5de', progress: 1.5 }],
-    [],
-  );
+  const [name, setName] = useState('Cronos Vault');
+  const [symbol, setSymbol] = useState('CVLT');
+  const [description, setDescription] = useState('A Cronos-native fair launch with protected identity, VVS graduation, and public LP lock receipts.');
+  const [graduationTarget, setGraduationTarget] = useState('65,000');
+  const [initialBuy, setInitialBuy] = useState('250');
+  const [xLink, setXLink] = useState('https://x.com/project');
+  const selectedLaunch = launches[0];
+  const existingIdentities = useMemo(() => launches, []);
   const identity = useMemo(() => assessTokenIdentity({ name, symbol }, existingIdentities), [name, symbol, existingIdentities]);
   const demoProgress = calculateGraduationProgress(57_330n, 65_000n);
   const currentLimit = getAntiBotBuyLimit({ elapsedSeconds: 180, baseLimitCro: 1_000 });
+  const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
 
   return (
     <main>
@@ -71,8 +104,9 @@ function App() {
         <div className="navLinks">
           <a href="#board">Explore</a>
           <a href="#create">Create</a>
-          <a href="#trust">Trust</a>
-          <a href="#deploy">Testnet</a>
+          <a href="#token">Token page</a>
+          <a href="#ops">Ops</a>
+          <a href="#proof">Proof</a>
         </div>
         <a href="#create" className="connectButton">Create Token</a>
       </nav>
@@ -82,8 +116,8 @@ function App() {
           <div className="statusLine"><span className="liveDot" /> Cronos testnet MVP · VVS-first graduation</div>
           <h1>Launch Cronos memes with protection buyers can actually read.</h1>
           <p className="lede">
-            A modern Cronos-native launchpad surface inspired by the speed of pump.fun, the launch board clarity of
-            WolfSwap, and the proof-first trust layer Cronos projects need before whitelist conversations.
+            A modern Cronos-native launchpad for fair launches, protected token identity, anti-snipe windows,
+            visible VVS graduation, and public LP-lock proof.
           </p>
           <div className="heroActions">
             <a href="#create" className="button primary">Start protected launch</a>
@@ -97,15 +131,15 @@ function App() {
             <span>CROF launched 6m ago</span>
           </div>
           <div className="statsGrid">
-            <div><strong>4</strong><span>sample launches</span></div>
-            <div><strong>{demoProgress}%</strong><span>runner progress</span></div>
-            <div><strong>180d</strong><span>LP lock default</span></div>
+            <Metric label="sample launches" value="4" />
+            <Metric label="runner progress" value={`${demoProgress}%`} />
+            <Metric label="LP lock default" value="180d" />
           </div>
           <div className="proofCard">
             <p className="eyebrow">Default trust policy</p>
             <ul>
               <li>Duplicate normalized names and symbols blocked on-chain.</li>
-              <li>CRO, Cronos, VVS, Crypto.com, Tectonic, Fulcrom, WolfSwap reserved.</li>
+              <li>CRO, Cronos, VVS, Crypto.com, Tectonic, and Fulcrom reserved.</li>
               <li>Graduation seeds VVS-compatible liquidity and locks LP.</li>
             </ul>
           </div>
@@ -131,55 +165,131 @@ function App() {
         </div>
       </section>
 
-      <section id="create" className="panel createPanel">
+      <section id="create" className="panel createV2">
         <div>
           <p className="eyebrow">Create token</p>
-          <h2>Anti-vamp preflight before a wallet ever signs.</h2>
-          <p>
-            Pump-style creation should still protect the ecosystem. The form checks reserved Cronos names, duplicate
-            identities, homoglyph swaps, and near-matches before launch.
-          </p>
-          <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
-          <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
+          <h2>Guided launch form with immutable-data warnings.</h2>
+          <p>Name, ticker, image, and launch links should be treated as immutable after launch. The preflight checks reserved Cronos names, duplicate identities, homoglyph swaps, and near-matches before wallet signing.</p>
+          <div className="formGrid">
+            <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
+            <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
+            <label className="wide">Description<input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+            <label>Graduation target<input value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
+            <label>Initial buy CRO<input value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
+            <label className="wide">X / Website link<input value={xLink} onChange={(event) => setXLink(event.target.value)} /></label>
+          </div>
+          <div className="toggles">
+            <ToggleRow label="Auto-graduate when reserve fills" />
+            <ToggleRow label="Anti-snipe launch window" />
+            <ToggleRow label="Token tax" enabled={false} />
+          </div>
         </div>
-        <div className="terminalCard">
-          <div className="terminalTop"><span /><span /><span /></div>
-          <h3>Identity assessment</h3>
-          <Badge tone={identity.status === 'available' ? 'good' : identity.status === 'warn' ? 'warn' : 'bad'}>{identity.status}</Badge>
+        <div className="createPreviewStack">
+          <article className="launchCard previewCard">
+            <div className="launchMain">
+              <div className="uploadMock">IMG</div>
+              <div>
+                <div className="cardTop"><h3>{name || 'Token name'}</h3><span>${symbol || 'TICKER'}</span></div>
+                <p className="description">{description}</p>
+                <div className="socials"><span>X</span><span>Web</span></div>
+              </div>
+            </div>
+            <div className="progress"><span style={{ width: '0%' }} /></div>
+            <div className="badges"><Badge tone="blue">Preview</Badge><Badge tone="good">Anti-snipe</Badge><Badge>No tax</Badge></div>
+          </article>
+          <div className="terminalCard">
+            <h3>Preflight + cost</h3>
+            <Badge tone={identity.status === 'available' ? 'good' : identity.status === 'warn' ? 'warn' : 'bad'}>{identity.status}</Badge>
+            <dl>
+              <dt>Normalized name</dt><dd>{identity.normalizedName}</dd>
+              <dt>Normalized symbol</dt><dd>{identity.normalizedSymbol}</dd>
+              <dt>Reasons</dt><dd>{identity.reasons.length ? identity.reasons.join(', ') : 'None'}</dd>
+              <dt>Minute 3 cap</dt><dd>{currentLimit} CRO max buy</dd>
+              <dt>Estimated total</dt><dd>{totalCost.toLocaleString()} CRO incl. mock fee</dd>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <section id="token" className="panel tokenDetail">
+        <div className="tokenMainColumn">
+          <div className="tokenHeader">
+            <TokenGlyph launch={selectedLaunch} />
+            <div>
+              <p className="eyebrow">Token detail prototype</p>
+              <h2>{selectedLaunch.name} <span>${selectedLaunch.symbol}</span></h2>
+              <p>{selectedLaunch.description}</p>
+              <div className="badges"><Badge tone="good">Protected identity</Badge><Badge tone="blue">VVS route</Badge><Badge>No tax</Badge><Badge tone="warn">Launching</Badge></div>
+            </div>
+          </div>
+          <div className="detailStats">
+            <Metric label="market cap" value={selectedLaunch.marketCap} />
+            <Metric label="24h volume" value={selectedLaunch.volume24h} />
+            <Metric label="holders" value="128" />
+            <Metric label="progress" value={`${selectedLaunch.progress}%`} />
+          </div>
+          <div className="chartPanel">
+            <div className="chartLine" />
+            <div className="chartBars">{Array.from({ length: 36 }).map((_, index) => <span key={index} style={{ height: `${18 + ((index * 17) % 72)}%` }} />)}</div>
+          </div>
+          <div className="tablesGrid">
+            <div className="dataTable"><h3>Recent trades</h3>{trades.map((trade) => <div key={`${trade.wallet}${trade.age}`}><b className={trade.side === 'Buy' ? 'buy' : 'sell'}>{trade.side}</b><span>{trade.wallet}</span><span>{trade.amount}</span><span>{trade.age}</span></div>)}</div>
+            <div className="dataTable"><h3>Holders</h3>{holders.map((holder) => <div key={holder.wallet}><b>{holder.share}</b><span>{holder.wallet}</span><span>{holder.note}</span></div>)}</div>
+          </div>
+        </div>
+        <aside className="tradePanel">
+          <h3>Trade preview</h3>
+          <div className="buySell"><button>Buy</button><button>Sell</button></div>
+          <input value="250 CRO" readOnly />
+          <div className="amountChips"><span>50</span><span>100</span><span>250</span><span>500</span></div>
           <dl>
-            <dt>Normalized name</dt><dd>{identity.normalizedName}</dd>
-            <dt>Normalized symbol</dt><dd>{identity.normalizedSymbol}</dd>
-            <dt>Reasons</dt><dd>{identity.reasons.length ? identity.reasons.join(', ') : 'None'}</dd>
-            <dt>Minute 3 anti-snipe cap</dt><dd>{currentLimit} CRO max buy</dd>
+            <dt>Receive est.</dt><dd>15,940 CROJACK</dd>
+            <dt>Slippage</dt><dd>1.0%</dd>
+            <dt>Creator</dt><dd>{selectedLaunch.creator}</dd>
+            <dt>LP status</dt><dd>Locks on graduation</dd>
           </dl>
-          <p className="small">`Teen W0lf` is blocked because W0LF folds into an existing Teen Wolf identity.</p>
-        </div>
+          <a className="button primary" href="#create">Connect wallet later</a>
+        </aside>
       </section>
 
       <section id="trust" className="panel trustGrid">
         <div className="trustFeature">
-          <p className="eyebrow">Buyer-facing proof</p>
-          <h2>Every launch gets a trust panel, not just a chart.</h2>
-          <p>Token pages should make the important facts visible at a glance: owner posture, tax, router, pair, LP vault, unlock time, creator wallet, and clone-risk checks.</p>
+          <p className="eyebrow">Launch proof model</p>
+          <h2>Every launch gets risk signals, not vague “safe” labels.</h2>
+          <p>Use buyer-facing facts: owner posture, tax, router, pair, LP vault, unlock time, creator wallet, top holders, and clone-risk checks.</p>
         </div>
         <div className="trustChecklist">
-          {['Source verification pending until deploy', 'Tax disabled for v0', 'Auto-graduate on reserve target', 'LP sent to public timelock vault', 'VVS router configurable', 'Reserved ecosystem names blocked'].map((item) => (
+          {['Source verification pending until deploy', 'Tax disabled for v0', 'Auto-graduate on reserve target', 'LP sent to public timelock vault', 'VVS router configurable', 'Reserved ecosystem names blocked', 'Report / disputed-status hook', 'Top-holder concentration placeholder'].map((item) => (
             <div key={item}><span>✓</span>{item}</div>
           ))}
         </div>
       </section>
 
-      <section id="deploy" className="panel deployPanel">
+      <section id="ops" className="panel opsGrid">
+        <div className="miniPanel">
+          <p className="eyebrow">Admin queue</p>
+          <h2>Moderation surface for anti-vamp enforcement.</h2>
+          <div className="queueList">{adminQueue.map(([type, subject, state]) => <div key={subject}><span>{type}</span><b>{subject}</b><em>{state}</em></div>)}</div>
+        </div>
+        <div className="miniPanel">
+          <p className="eyebrow">Creator profile</p>
+          <h2>Reputation follows the wallet.</h2>
+          <div className="creatorStats"><Metric label="tokens launched" value="7" /><Metric label="graduated" value="3" /><Metric label="reports" value="0" /></div>
+          <p className="small">Future creator pages should show reused socials, prior graduations, launch history, and report/dispute count.</p>
+        </div>
+      </section>
+
+      <section id="proof" className="panel deployPanel">
         <div>
-          <p className="eyebrow">Testnet readiness</p>
+          <p className="eyebrow">Cronos / VVS proof package</p>
           <h2>Prepared up to the deployer-wallet boundary.</h2>
           <p>Mock VVS graduation is covered by tests. The deploy path is scripted; the remaining external inputs are the local private key and official VVS testnet addresses.</p>
         </div>
         <div className="deploySteps">
-          <div><strong>1</strong><span>NameRegistry + reserved names</span></div>
-          <div><strong>2</strong><span>LaunchpadFactory registrar</span></div>
-          <div><strong>3</strong><span>Timelocked LP vault</span></div>
-          <div><strong>4</strong><span>VVS-compatible graduation</span></div>
+          <div><strong>1</strong><span>Factory + registry addresses</span></div>
+          <div><strong>2</strong><span>Sample token graduation tx</span></div>
+          <div><strong>3</strong><span>Pair + LP vault lock proof</span></div>
+          <div><strong>4</strong><span>No-tax / trust-panel checklist</span></div>
         </div>
       </section>
     </main>

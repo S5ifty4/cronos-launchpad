@@ -8,10 +8,10 @@ const eth = (value: number) => BigInt(value) * 1_000000000000000000n;
 
 const defaultArgs = (router: `0x${string}`, lpBeneficiary: `0x${string}`) =>
   [
-    'Teen Wolf',
-    'TWOLF',
-    nameHash('teen wolf'),
-    nameHash('TWOLF'),
+    'Blue Gecko',
+    'BGECKO',
+    nameHash('blue gecko'),
+    nameHash('BGECKO'),
     1_000_000_000_000000000000000000n,
     eth(20),
     true,
@@ -52,7 +52,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
       /NameAlreadyClaimed|SymbolAlreadyClaimed/,
     );
 
-    const token = await registry.read.tokenByNameHash([nameHash('teen wolf')]);
+    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]);
     assert.notEqual(token, zeroAddress);
   });
 
@@ -82,7 +82,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
     const args = defaultArgs(router.address, lpBeneficiary.account.address);
 
     await factory.write.createToken(args, { account: creator.account, value: eth(10) });
-    const token = await registry.read.tokenByNameHash([nameHash('teen wolf')]);
+    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]);
 
     await factory.write.buy([token], { account: creator.account, value: eth(10) });
 

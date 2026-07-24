@@ -1,5 +1,5 @@
 {
-  "name": "@cronos-launchpad/indexer",
+  "name": "@cronos-launchpad/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,10 +7,10 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test --import tsx test/*.test.ts",
-    "poll:dry-run": "tsx src/poller.ts"
+    "dev": "tsx src/server.ts"
   },
   "dependencies": {
-    "viem": "^2.43.2"
+    "@cronos-launchpad/db": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

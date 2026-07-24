@@ -13,6 +13,8 @@ Cronos-native token launchpad prototype focused on:
 - `contracts` — Solidity launchpad/name-registry/LP-lock scaffold.
 - `apps/web` — Vite React MVP UI.
 - `docs/lp-policy.md` — recommendation: VVS V2 WCRO pair with LP tokens routed to a public 180-day timelock vault.
+- `docs/testnet-readiness.md` — deploy prerequisites, scripts, VVS unknowns, and proof-package checklist.
+- `docs/design-benchmark.md` — UX notes from Robinfun, WolfSwap, pump.fun, and Cronos brand alignment.
 
 ## Commands
 
@@ -22,6 +24,9 @@ pnpm test
 pnpm build
 pnpm web:dev
 pnpm contracts:test
+pnpm --filter @cronos-launchpad/contracts deploy:check
+# after deployer + VVS testnet router are configured:
+pnpm --filter @cronos-launchpad/contracts deploy:cronos-testnet
 ```
 
 ## Current chain recommendation

@@ -5,7 +5,9 @@
   "scripts": {
     "test": "hardhat test",
     "build": "hardhat compile",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "deploy:check": "hardhat run scripts/check-env.ts",
+    "deploy:cronos-testnet": "hardhat run scripts/deploy-cronos-testnet.ts --network cronosTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",

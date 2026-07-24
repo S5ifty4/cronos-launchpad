@@ -26,7 +26,7 @@ contract TimelockedLpVault is Ownable {
 
     function deposit(address lpToken, address beneficiary, uint256 amount, uint256 unlocksAt) external onlyOwner {
         if (lpToken == address(0) || beneficiary == address(0)) revert ZeroAddress();
-        if (unlocksAt <= block.timestamp) revert InvalidUnlockTime();
+        if (unlocksAt <= block.timestamp || amount == 0) revert InvalidUnlockTime();
 
         LockInfo storage info = locks[lpToken];
         if (info.beneficiary == address(0)) {
@@ -39,7 +39,8 @@ contract TimelockedLpVault is Ownable {
         }
 
         info.amount += amount;
-        IERC20(lpToken).transferFrom(msg.sender, address(this), amount);
+        bool ok = IERC20(lpToken).transferFrom(msg.sender, address(this), amount);
+        require(ok, "LP_TRANSFER_FAILED");
         emit LpDeposited(lpToken, beneficiary, amount, info.unlocksAt);
     }
 
@@ -50,7 +51,8 @@ contract TimelockedLpVault is Ownable {
 
         uint256 amount = info.amount;
         info.amount = 0;
-        IERC20(lpToken).transfer(info.beneficiary, amount);
+        bool ok = IERC20(lpToken).transfer(info.beneficiary, amount);
+        require(ok, "LP_WITHDRAW_FAILED");
         emit LpWithdrawn(lpToken, info.beneficiary, amount);
     }
 }

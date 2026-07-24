@@ -1,19 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {LaunchToken} from "./LaunchToken.sol";
 import {NameRegistry} from "./NameRegistry.sol";
+import {TimelockedLpVault} from "./TimelockedLpVault.sol";
+import {IVvsFactory} from "./interfaces/IVvsFactory.sol";
+import {IVvsRouter} from "./interfaces/IVvsRouter.sol";
 
 contract LaunchpadFactory is Ownable, ReentrancyGuard {
     error InvalidGraduationTarget();
     error InvalidSupply();
+    error InvalidAddress();
+    error InvalidLpLockDuration();
     error AntiBotLimitExceeded(uint256 attempted, uint256 limit);
     error LaunchNotFound(address token);
     error AlreadyGraduated(address token);
     error GraduationTargetNotMet(uint256 reserveRaised, uint256 target);
     error TransferFailed();
+    error PairNotFound();
 
     struct LaunchConfig {
         bytes32 normalizedNameHash;
@@ -25,14 +32,21 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         bool antiBotEnabled;
         address creator;
         address vvsRouter;
+        address lpBeneficiary;
+        uint64 lpLockDurationSeconds;
     }
 
     struct LaunchState {
         uint256 reserveRaisedWei;
         bool graduated;
+        address pair;
+        address lpVault;
+        uint256 liquidity;
+        uint256 lpUnlocksAt;
     }
 
     NameRegistry public immutable nameRegistry;
+    TimelockedLpVault public immutable lpVault;
     mapping(address => LaunchConfig) public launchConfigByToken;
     mapping(address => LaunchState) public launchStateByToken;
     mapping(address => mapping(address => uint64)) public lastBuyAtByTokenByWallet;
@@ -47,14 +61,30 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         uint256 totalSupply,
         uint256 graduationTargetWei,
         bool antiBotEnabled,
-        address vvsRouter
+        address vvsRouter,
+        address lpBeneficiary,
+        uint64 lpLockDurationSeconds
     );
 
     event TokenBought(address indexed token, address indexed buyer, uint256 croIn, uint256 reserveRaisedWei);
-    event TokenGraduated(address indexed token, address indexed creator, address indexed vvsRouter, uint256 reserveRaisedWei);
+    event TokenGraduated(
+        address indexed token,
+        address indexed creator,
+        address indexed vvsRouter,
+        address pair,
+        address lpVault,
+        uint256 reserveRaisedWei,
+        uint256 tokenLiquidity,
+        uint256 liquidity,
+        uint256 lpUnlocksAt
+    );
 
-    constructor(NameRegistry nameRegistry_, address owner_) Ownable(owner_) {
+    constructor(NameRegistry nameRegistry_, TimelockedLpVault lpVault_, address owner_) Ownable(owner_) {
+        if (address(nameRegistry_) == address(0) || address(lpVault_) == address(0) || owner_ == address(0)) {
+            revert InvalidAddress();
+        }
         nameRegistry = nameRegistry_;
+        lpVault = lpVault_;
     }
 
     function createToken(
@@ -67,10 +97,14 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         bool antiBotEnabled,
         uint64 antiBotDurationSeconds,
         uint256 antiBotBaseLimitWei,
-        address vvsRouter
+        address vvsRouter,
+        address lpBeneficiary,
+        uint64 lpLockDurationSeconds
     ) external payable nonReentrant returns (address token) {
         if (totalSupply == 0) revert InvalidSupply();
         if (graduationTargetWei == 0) revert InvalidGraduationTarget();
+        if (vvsRouter == address(0) || lpBeneficiary == address(0)) revert InvalidAddress();
+        if (lpLockDurationSeconds < 30 days) revert InvalidLpLockDuration();
 
         token = address(new LaunchToken(name, symbol, 18, totalSupply, address(this), msg.sender));
         nameRegistry.claimIdentity(token, normalizedNameHash, normalizedSymbolHash, name, symbol);
@@ -84,7 +118,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             antiBotEndsAt: antiBotEnabled ? uint64(block.timestamp) + antiBotDurationSeconds : 0,
             antiBotEnabled: antiBotEnabled,
             creator: msg.sender,
-            vvsRouter: vvsRouter
+            vvsRouter: vvsRouter,
+            lpBeneficiary: lpBeneficiary,
+            lpLockDurationSeconds: lpLockDurationSeconds
         });
 
         emit TokenCreated(
@@ -97,7 +133,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             totalSupply,
             graduationTargetWei,
             antiBotEnabled,
-            vvsRouter
+            vvsRouter,
+            lpBeneficiary,
+            lpLockDurationSeconds
         );
 
         if (msg.value > 0) {
@@ -109,7 +147,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         _buy(token, msg.sender, msg.value);
     }
 
-    function graduate(address token) external nonReentrant {
+    function graduate(address token, uint256 minTokenAmount, uint256 minCroAmount, uint256 deadline) external nonReentrant {
         LaunchConfig memory config = launchConfigByToken[token];
         if (config.creator == address(0)) revert LaunchNotFound(token);
         LaunchState storage state = launchStateByToken[token];
@@ -120,9 +158,44 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
 
         state.graduated = true;
 
-        // MVP scaffold: keep the VVS call behind an adapter in the next slice once router/factory addresses are confirmed.
-        // The event records the intended router so the indexer/UI can prove the configured graduation path.
-        emit TokenGraduated(token, config.creator, config.vvsRouter, state.reserveRaisedWei);
+        uint256 reserveToSeed = state.reserveRaisedWei;
+        uint256 tokenLiquidity = IERC20(token).balanceOf(address(this));
+        if (tokenLiquidity == 0) revert InvalidSupply();
+
+        IVvsRouter router = IVvsRouter(config.vvsRouter);
+        IERC20(token).approve(config.vvsRouter, tokenLiquidity);
+        (uint256 amountToken, , uint256 liquidity) = router.addLiquidityETH{value: reserveToSeed}(
+            token,
+            tokenLiquidity,
+            minTokenAmount,
+            minCroAmount,
+            address(this),
+            deadline
+        );
+
+        address pair = IVvsFactory(router.factory()).getPair(token, router.WETH());
+        if (pair == address(0) || liquidity == 0) revert PairNotFound();
+
+        uint256 lpUnlocksAt = block.timestamp + config.lpLockDurationSeconds;
+        IERC20(pair).approve(address(lpVault), liquidity);
+        lpVault.deposit(pair, config.lpBeneficiary, liquidity, lpUnlocksAt);
+
+        state.pair = pair;
+        state.lpVault = address(lpVault);
+        state.liquidity = liquidity;
+        state.lpUnlocksAt = lpUnlocksAt;
+
+        emit TokenGraduated(
+            token,
+            config.creator,
+            config.vvsRouter,
+            pair,
+            address(lpVault),
+            reserveToSeed,
+            amountToken,
+            liquidity,
+            lpUnlocksAt
+        );
     }
 
     function currentAntiBotLimit(address token) public view returns (uint256) {

@@ -7,7 +7,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <main>
       <nav className="topNav">
-        <a className="brand" href="/" aria-label="CronosForge home"><img className="brandMark" src="/assets/cronosforge-logo-transparent.png" alt="" /><span>cronos<span>forge</span></span></a>
+        <a className="brand" href="/" aria-label="CronosForge home"><img className="brandMark" src="/assets/cronosforge-logo-inverted.png" alt="" /><span>cronos<span>forge</span></span></a>
         <div className="navLinks">{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div>
         <WalletStatus />
       </nav>

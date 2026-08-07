@@ -17,7 +17,7 @@ export function HomePage() {
           <div className="heroActions"><a href="/create" className="button primary">Start protected launch</a><a href="#board" className="button secondary">Explore runners</a></div>
         </div>
         <aside className="heroBoard" aria-label="Launchpad summary">
-          <div className="heroLogoLockup"><img src="/assets/cronosforge-logo-transparent.png" alt="CronosForge rocket launch logo" /><span>CronosForge</span></div>
+          <div className="heroLogoLockup"><img src="/assets/cronosforge-logo-inverted.png" alt="CronosForge rocket launch logo" /><span>CronosForge</span></div>
           <div className="tickerTape"><span>0x8...c5a2 bought 222 CRO</span><span>MVVS 88.2% to VVS</span><span>CROF launched 6m ago</span></div>
           <div className="statsGrid"><Metric label="sample launches" value="4" /><Metric label="runner progress" value={`${demoProgress}%`} /><Metric label="LP lock default" value="180d" /></div>
           <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Duplicate normalized names and symbols blocked on-chain.</li><li>CRO, Cronos, VVS, Crypto.com, Tectonic, and Fulcrom reserved.</li><li>Graduation seeds VVS-compatible liquidity and locks LP.</li></ul></div>

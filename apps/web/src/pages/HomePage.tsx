@@ -11,12 +11,13 @@ export function HomePage() {
     <>
       <section className="hero">
         <div className="heroCopy">
-          <div className="statusLine"><span className="liveDot" /> Cronos testnet MVP · VVS-first graduation</div>
-          <h1>Launch Cronos memes with protection buyers can actually read.</h1>
-          <p className="lede">A modern Cronos-native launchpad for fair launches, protected token identity, anti-snipe windows, visible VVS graduation, and public LP-lock proof.</p>
+          <div className="statusLine"><span className="liveDot" /> CronosForge testnet MVP · VVS-first graduation</div>
+          <h1>Forge Cronos meme launches with protection buyers can actually read.</h1>
+          <p className="lede">CronosForge is a Cronos-native launchpad for fair launches, protected token identity, anti-snipe windows, visible VVS graduation, and public LP-lock proof.</p>
           <div className="heroActions"><a href="/create" className="button primary">Start protected launch</a><a href="#board" className="button secondary">Explore runners</a></div>
         </div>
         <aside className="heroBoard" aria-label="Launchpad summary">
+          <div className="heroLogoLockup"><img src="/assets/cronosforge-logo-transparent.png" alt="CronosForge rocket launch logo" /><span>CronosForge</span></div>
           <div className="tickerTape"><span>0x8...c5a2 bought 222 CRO</span><span>MVVS 88.2% to VVS</span><span>CROF launched 6m ago</span></div>
           <div className="statsGrid"><Metric label="sample launches" value="4" /><Metric label="runner progress" value={`${demoProgress}%`} /><Metric label="LP lock default" value="180d" /></div>
           <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Duplicate normalized names and symbols blocked on-chain.</li><li>CRO, Cronos, VVS, Crypto.com, Tectonic, and Fulcrom reserved.</li><li>Graduation seeds VVS-compatible liquidity and locks LP.</li></ul></div>

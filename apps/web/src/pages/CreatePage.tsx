@@ -5,14 +5,18 @@ import { prepareCreateTokenTx } from '../contracts/launchpadClient';
 import { getLaunches } from '../data/api';
 import { useInjectedWallet } from '../wallet/useInjectedWallet';
 import { ToggleRow } from '../components/ToggleRow';
+import { SocialLinks } from '../components/SocialLinks';
 
 export function CreatePage() {
-  const [name, setName] = useState('Cronos Vault');
-  const [symbol, setSymbol] = useState('CVLT');
-  const [description, setDescription] = useState('A Cronos-native fair launch with protected identity, VVS graduation, and public LP lock receipts.');
-  const [graduationTarget, setGraduationTarget] = useState('65,000');
-  const [initialBuy, setInitialBuy] = useState('250');
-  const [xLink, setXLink] = useState('https://x.com/project');
+  const [name, setName] = useState('');
+  const [symbol, setSymbol] = useState('');
+  const [description, setDescription] = useState('');
+  const [graduationTarget, setGraduationTarget] = useState('');
+  const [initialBuy, setInitialBuy] = useState('');
+  const [xLink, setXLink] = useState('');
+  const [websiteLink, setWebsiteLink] = useState('');
+  const [discordLink, setDiscordLink] = useState('');
+  const [telegramLink, setTelegramLink] = useState('');
   const [txHash, setTxHash] = useState<string>();
   const existingIdentities = useMemo(() => getLaunches(), []);
   const wallet = useInjectedWallet();
@@ -28,6 +32,7 @@ export function CreatePage() {
   const currentLimit = getAntiBotBuyLimit({ elapsedSeconds: 180, baseLimitCro: 1_000 });
   const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
   const txReadiness = txPreview.ready ? 'ready to sign' : `waiting: ${txPreview.missing.join(', ')}`;
+  const previewSocials = [xLink && 'X', websiteLink && 'Website', discordLink && 'Discord', telegramLink && 'Telegram'].filter(Boolean) as string[];
   const handleSend = async () => {
     const hash = await wallet.sendTransaction(txPreview);
     if (hash) setTxHash(hash);
@@ -42,16 +47,19 @@ export function CreatePage() {
         <div className="formGrid">
           <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
-          <label className="wide">Description<input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
-          <label>Graduation target<input value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
-          <label>Initial buy CRO<input value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
-          <label className="wide">X / Website link<input value={xLink} onChange={(event) => setXLink(event.target.value)} /></label>
+          <label className="wide">Description<textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+          <label>Graduation target<span className="fieldHelp">CRO reserve needed before VVS graduation.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
+          <label>Initial buy CRO<span className="fieldHelp">Optional first buy sent with token creation.</span><input inputMode="decimal" value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
+          <label>X<input type="url" value={xLink} onChange={(event) => setXLink(event.target.value)} /></label>
+          <label>Website<input type="url" value={websiteLink} onChange={(event) => setWebsiteLink(event.target.value)} /></label>
+          <label>Discord<input type="url" value={discordLink} onChange={(event) => setDiscordLink(event.target.value)} /></label>
+          <label>Telegram<input type="url" value={telegramLink} onChange={(event) => setTelegramLink(event.target.value)} /></label>
         </div>
         <div className="toggles"><ToggleRow label="Auto-graduate when reserve fills" /><ToggleRow label="Anti-snipe launch window" /><ToggleRow label="Token tax" enabled={false} /></div>
       </div>
       <div className="createPreviewStack">
         <article className="launchCard previewCard">
-          <div className="launchMain"><div className="uploadMock">IMG</div><div><div className="cardTop"><h3>{name || 'Token name'}</h3><span>${symbol || 'TICKER'}</span></div><p className="description">{description}</p><div className="socials"><span>X</span><span>Web</span></div></div></div>
+          <div className="launchMain"><div className="uploadMock">IMG</div><div><div className="cardTop"><h3>{name || 'Token name'}</h3><span>{symbol ? `$${symbol}` : '$TICKER'}</span></div>{description && <p className="description">{description}</p>}<SocialLinks socials={previewSocials} /></div></div>
           <div className="progress"><span style={{ width: '0%' }} /></div>
           <div className="badges"><Badge tone="blue">Preview</Badge><Badge tone="good">Anti-snipe</Badge><Badge>No tax</Badge></div>
         </article>

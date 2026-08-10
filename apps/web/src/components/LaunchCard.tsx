@@ -1,6 +1,7 @@
 import type { Launch } from '../data/types';
 import { Badge } from './Badge';
 import { ProgressBar } from './ProgressBar';
+import { SocialLinks } from './SocialLinks';
 import { TokenGlyph } from './TokenGlyph';
 
 export function LaunchCard({ launch }: { launch: Launch }) {
@@ -11,7 +12,7 @@ export function LaunchCard({ launch }: { launch: Launch }) {
         <div>
           <div className="cardTop"><h3>{launch.name}</h3><span>${launch.symbol}</span></div>
           <p className="description">{launch.description}</p>
-          <div className="socials">{launch.socials.map((social) => <span key={social}>{social}</span>)}</div>
+          <SocialLinks socials={launch.socials} />
         </div>
       </div>
       <ProgressBar value={launch.progress} />

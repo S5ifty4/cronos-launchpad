@@ -3,6 +3,7 @@ import { assessTokenIdentity, getAntiBotBuyLimit } from '@cronos-launchpad/core'
 import { Badge } from '../components/Badge';
 import { prepareCreateTokenTx } from '../contracts/launchpadClient';
 import { getLaunches } from '../data/api';
+import { uploadTokenImage } from '../data/supabase';
 import { useInjectedWallet } from '../wallet/useInjectedWallet';
 import { ToggleRow } from '../components/ToggleRow';
 import { SocialLinks } from '../components/SocialLinks';
@@ -18,6 +19,7 @@ export function CreatePage() {
   const [discordLink, setDiscordLink] = useState('');
   const [telegramLink, setTelegramLink] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [imageUploadStatus, setImageUploadStatus] = useState('');
   const [txHash, setTxHash] = useState<string>();
   const existingIdentities = useMemo(() => getLaunches(), []);
   const wallet = useInjectedWallet();
@@ -41,9 +43,22 @@ export function CreatePage() {
     const hash = await wallet.sendTransaction(txPreview);
     if (hash) setTxHash(hash);
   };
-  const handleImageChange = (file?: File) => {
+  const handleImageChange = async (file?: File) => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     setImagePreviewUrl(file ? URL.createObjectURL(file) : '');
+    setImageUploadStatus(file ? 'Uploading image…' : '');
+    if (!file) return;
+    try {
+      const publicUrl = await uploadTokenImage(file);
+      if (publicUrl) {
+        setImagePreviewUrl(publicUrl);
+        setImageUploadStatus('Image uploaded to Supabase Storage.');
+      } else {
+        setImageUploadStatus('Local preview only until Supabase env is configured.');
+      }
+    } catch {
+      setImageUploadStatus('Image upload failed; local preview is still shown.');
+    }
   };
 
   return (
@@ -55,7 +70,7 @@ export function CreatePage() {
         <div className="formGrid">
           <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
-          <label className="wide imageUploadLabel">Token image<span className="fieldHelp">Upload square artwork for the token card and detail page.</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => handleImageChange(event.target.files?.[0])} /></label>
+          <label className="wide imageUploadLabel">Token image<span className="fieldHelp">Upload square artwork for the token card and detail page.</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleImageChange(event.target.files?.[0])} />{imageUploadStatus && <span className="fieldHelp">{imageUploadStatus}</span>}</label>
           <label className="wide">Description<textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
           <label>Graduation target<span className="fieldHelp">CRO reserve needed before VVS graduation.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
           <label>Initial buy CRO<span className="fieldHelp">Optional first buy sent with token creation.</span><input inputMode="decimal" value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>

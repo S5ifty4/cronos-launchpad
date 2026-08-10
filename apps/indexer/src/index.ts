@@ -4,8 +4,8 @@ export type IndexerState = {
 };
 
 export type DecodedLaunchpadEvent =
-  | { type: 'TokenCreated'; token: string; creator: string; blockNumber: bigint; txHash: string }
-  | { type: 'TokenBought'; token: string; buyer: string; croIn: bigint; blockNumber: bigint; txHash: string }
+  | { type: 'TokenCreated'; token: string; creator: string; name: string; symbol: string; graduationTargetWei: bigint; antiBotEnabled: boolean; vvsRouter: string; blockNumber: bigint; txHash: string }
+  | { type: 'TokenBought'; token: string; buyer: string; croIn: bigint; reserveRaisedWei: bigint; blockNumber: bigint; txHash: string }
   | { type: 'TokenGraduated'; token: string; pair: string; lpVault: string; blockNumber: bigint; txHash: string }
   | { type: 'LpDeposited'; lpToken: string; beneficiary: string; amount: bigint; unlocksAt: bigint; blockNumber: bigint; txHash: string };
 

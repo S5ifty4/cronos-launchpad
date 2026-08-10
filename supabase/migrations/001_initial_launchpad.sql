@@ -102,5 +102,5 @@ on conflict (id) do nothing;
 create policy "public read token images" on storage.objects
   for select using (bucket_id = 'token-images');
 
-create policy "authenticated upload token images" on storage.objects
-  for insert to authenticated with check (bucket_id = 'token-images');
+create policy "public upload token images" on storage.objects
+  for insert with check (bucket_id = 'token-images');

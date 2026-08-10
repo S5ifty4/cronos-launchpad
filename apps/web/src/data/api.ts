@@ -1,4 +1,5 @@
 import { creatorProfile, holders, launches, proofPackage, trades } from './mock';
+import { fetchSupabaseLaunches } from './supabase';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
@@ -37,7 +38,9 @@ export function getProofPackage() {
   return proofPackage;
 }
 
-export function fetchLaunches() {
+export async function fetchLaunches() {
+  const supabaseLaunches = await fetchSupabaseLaunches();
+  if (supabaseLaunches) return supabaseLaunches;
   return fetchOrFallback('/launches', launches);
 }
 

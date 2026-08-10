@@ -1,0 +1,22 @@
+insert into public.launches (
+  chain_id, token_address, creator_address, name, symbol, normalized_name, normalized_symbol,
+  description, image_url, x_url, website_url, discord_url, telegram_url, status,
+  graduation_target_wei, reserve_raised_wei, anti_bot_enabled, tax_bips, vvs_router,
+  created_tx, created_block, created_at
+) values
+(338, '0x0000000000000000000000000000000000cro001', '0x681900000000000000000000000000000000a923', 'Crojack Protocol', 'CROJACK', 'crojack protocol', 'CROJACK', 'A protected Cronos meme launch with VVS-first graduation and public LP lock receipts.', null, 'https://x.com/crojack', 'https://cronosforge.com', null, null, 'launching', 65000000000000000000000, 27105000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed001', 1, now() - interval '18 minutes'),
+(338, '0x0000000000000000000000000000000000cro002', '0x7610000000000000000000000000000000001b29', 'Meme VVS Runner', 'MVVS', 'meme vvs runner', 'MVVS', 'Near graduation runner with anti-snipe launch rules and configurable VVS router path.', null, 'https://x.com/mvvs', null, null, 'https://t.me/mvvs', 'launching', 65000000000000000000000, 57330000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed002', 2, now() - interval '2 hours'),
+(338, '0x0000000000000000000000000000000000cro003', '0x4200000000000000000000000000000000007ad1', 'Crofessor', 'CROF', 'crofessor', 'CROF', 'Education-themed test launch showing trust badges, creator profile, and blocked clone checks.', null, null, 'https://cronosforge.com/docs', null, null, 'launching', 65000000000000000000000, 8060000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed003', 3, now() - interval '6 minutes'),
+(338, '0x0000000000000000000000000000000000cro004', '0x0c0a0000000000000000000000000000000019e8', 'Blue Chain Gecko', 'BCG', 'blue chain gecko', 'BCG', 'Graduated sample state for the VVS pair, LP vault, and proof panel UX.', null, 'https://x.com/bcg', 'https://cronosforge.com', 'https://discord.gg/cronosforge', null, 'graduated', 65000000000000000000000, 65000000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed004', 4, now() - interval '1 day'),
+(338, '0x0000000000000000000000000000000000cro005', '0x9ab1000000000000000000000000000000007e02', 'Cronos Doghouse', 'CDOG', 'cronos doghouse', 'CDOG', 'Community kennel runner with Discord raids, Telegram alerts, and no-tax launch rules.', null, 'https://x.com/cdog', 'https://cronosforge.com', 'https://discord.gg/cronosforge', 'https://t.me/cdog', 'launching', 65000000000000000000000, 41535000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed005', 5, now() - interval '41 minutes'),
+(338, '0x0000000000000000000000000000000000cro006', '0x58d20000000000000000000000000000000044af', 'MoonCRO Mission', 'MCRO', 'mooncro mission', 'MCRO', 'Final approach launch showing near-graduation pressure, holder growth, and LP-lock readiness.', null, null, 'https://cronosforge.com', null, 'https://t.me/mooncro', 'launching', 65000000000000000000000, 62140000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed006', 6, now() - interval '3 hours'),
+(338, '0x0000000000000000000000000000000000cro007', '0x7730000000000000000000000000000000000c19', 'Tectonic Toads', 'TOAD', 'tectonic toads', 'TOAD', 'Fresh-launch sample for low-progress filtering and early trust-signal review.', null, 'https://x.com/toad', null, 'https://discord.gg/cronosforge', null, 'launching', 65000000000000000000000, 3770000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed007', 7, now() - interval '9 minutes'),
+(338, '0x0000000000000000000000000000000000cro008', '0x6cc100000000000000000000000000000000d91b', 'Fulcrum Fox', 'FFOX', 'fulcrum fox', 'FFOX', 'Graduated reference launch with active socials and a completed LP-lock proof path.', null, 'https://x.com/ffox', 'https://cronosforge.com', null, 'https://t.me/ffox', 'graduated', 65000000000000000000000, 65000000000000000000000, true, 0, '0xC74C960708f043E04a84038c6D1136EA7Fcb16a1', '0xseed008', 8, now() - interval '2 days')
+on conflict (token_address) do update set
+  reserve_raised_wei = excluded.reserve_raised_wei,
+  status = excluded.status,
+  description = excluded.description,
+  x_url = excluded.x_url,
+  website_url = excluded.website_url,
+  discord_url = excluded.discord_url,
+  telegram_url = excluded.telegram_url;

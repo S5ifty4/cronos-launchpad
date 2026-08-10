@@ -1,3 +1,5 @@
+import { fetchLaunchFromSupabase, fetchLaunchesFromSupabase } from './supabase.js';
+
 export type ApiResponse = { status: number; body: unknown };
 
 const launches = [
@@ -18,4 +20,17 @@ export function handleRequest(pathname: string): ApiResponse {
   if (parts[0] === 'creators' && parts[1]) return { status: 200, body: { wallet: parts[1], launches: 7, graduated: 3 } };
   if (pathname === '/proof') return { status: 200, body: proof };
   return { status: 404, body: { error: 'not found' } };
+}
+
+export async function handleRequestAsync(pathname: string): Promise<ApiResponse> {
+  const parts = pathname.split('/').filter(Boolean);
+  if (pathname === '/launches') {
+    const rows = await fetchLaunchesFromSupabase();
+    if (rows) return { status: 200, body: rows };
+  }
+  if (parts[0] === 'launches' && parts[1] && !parts[2]) {
+    const row = await fetchLaunchFromSupabase(parts[1]);
+    if (row) return { status: 200, body: row };
+  }
+  return handleRequest(pathname);
 }

@@ -10,6 +10,7 @@
     "poll:dry-run": "tsx src/poller.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.2",
     "viem": "^2.43.2"
   },
   "devDependencies": {

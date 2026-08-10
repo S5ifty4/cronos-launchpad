@@ -21,6 +21,7 @@ export type Launch = {
   status: LaunchStatus;
   socials: string[];
   color: string;
+  imageUrl?: string;
 };
 
 export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string };

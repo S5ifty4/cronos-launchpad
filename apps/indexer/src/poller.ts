@@ -1,6 +1,7 @@
 import { createPublicClient, http, parseAbiItem, type Address } from 'viem';
 import { cronosTestnet } from 'viem/chains';
 import { describeHandler, nextState, type DecodedLaunchpadEvent, type IndexerState } from './index.js';
+import { persistEvents } from './persistence.js';
 
 const factoryEvents = [
   parseAbiItem('event TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address lpBeneficiary,uint64 lpLockDurationSeconds)'),
@@ -25,13 +26,14 @@ export async function pollLogs(config: PollerConfig) {
   const factoryLogs = await client.getLogs({ address: config.factoryAddress, events: factoryEvents, fromBlock: config.fromBlock, toBlock });
   const vaultLogs = await client.getLogs({ address: config.vaultAddress, events: vaultEvents, fromBlock: config.fromBlock, toBlock });
   const events: DecodedLaunchpadEvent[] = [...factoryLogs, ...vaultLogs].map((log) => {
-    if (log.eventName === 'TokenCreated') return { type: 'TokenCreated', token: log.args.token!, creator: log.args.creator!, blockNumber: log.blockNumber, txHash: log.transactionHash };
-    if (log.eventName === 'TokenBought') return { type: 'TokenBought', token: log.args.token!, buyer: log.args.buyer!, croIn: log.args.croIn!, blockNumber: log.blockNumber, txHash: log.transactionHash };
+    if (log.eventName === 'TokenCreated') return { type: 'TokenCreated', token: log.args.token!, creator: log.args.creator!, name: log.args.name!, symbol: log.args.symbol!, graduationTargetWei: log.args.graduationTargetWei!, antiBotEnabled: log.args.antiBotEnabled!, vvsRouter: log.args.vvsRouter!, blockNumber: log.blockNumber, txHash: log.transactionHash };
+    if (log.eventName === 'TokenBought') return { type: 'TokenBought', token: log.args.token!, buyer: log.args.buyer!, croIn: log.args.croIn!, reserveRaisedWei: log.args.reserveRaisedWei!, blockNumber: log.blockNumber, txHash: log.transactionHash };
     if (log.eventName === 'TokenGraduated') return { type: 'TokenGraduated', token: log.args.token!, pair: log.args.pair!, lpVault: log.args.lpVault!, blockNumber: log.blockNumber, txHash: log.transactionHash };
     return { type: 'LpDeposited', lpToken: log.args.lpToken!, beneficiary: log.args.beneficiary!, amount: log.args.amount!, unlocksAt: log.args.unlocksAt!, blockNumber: log.blockNumber, txHash: log.transactionHash };
   });
   const state: IndexerState = nextState({ chainId: cronosTestnet.id, lastIndexedBlock: config.fromBlock }, events);
-  return { events, state, actions: events.map(describeHandler) };
+  const persistence = await persistEvents(events, cronosTestnet.id);
+  return { events, state, actions: events.map(describeHandler), persistence };
 }
 
 export function summarizeSimulationProof(proof: { expectedEvents?: string[] }) {

@@ -1,10 +1,11 @@
 import { calculateGraduationProgress } from '@cronos-launchpad/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '../components/Badge';
 import { LaunchCard } from '../components/LaunchCard';
 import { Metric } from '../components/Metric';
-import { getLaunches } from '../data/api';
+import { fetchLaunches, getLaunches } from '../data/api';
 import { filterLaunches, type ExploreTab } from '../data/exploreFilters';
+import type { Launch } from '../data/types';
 
 const filterTabs: { id: ExploreTab; label: string; tone?: 'blue' | 'good' }[] = [
   { id: 'all', label: 'Newest', tone: 'blue' },
@@ -15,11 +16,18 @@ const filterTabs: { id: ExploreTab; label: string; tone?: 'blue' | 'good' }[] = 
 ];
 
 export function HomePage() {
-  const launches = getLaunches();
+  const [launches, setLaunches] = useState<Launch[]>(() => getLaunches());
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<ExploreTab>('all');
   const visibleLaunches = useMemo(() => filterLaunches(launches, { query, tab: activeTab }), [launches, query, activeTab]);
   const demoProgress = calculateGraduationProgress(57_330n, 65_000n);
+  useEffect(() => {
+    let active = true;
+    fetchLaunches().then((nextLaunches) => {
+      if (active) setLaunches(nextLaunches);
+    });
+    return () => { active = false; };
+  }, []);
   return (
     <>
       <section className="hero">

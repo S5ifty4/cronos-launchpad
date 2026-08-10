@@ -13,6 +13,11 @@ export type LaunchRecord = {
   vvsPair?: string;
   lpVault?: string;
   lpUnlocksAt?: string;
+  imageUrl?: string;
+  xUrl?: string;
+  websiteUrl?: string;
+  discordUrl?: string;
+  telegramUrl?: string;
 };
 
 export type TradeRecord = {

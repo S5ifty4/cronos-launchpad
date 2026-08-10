@@ -38,6 +38,7 @@ Secondary chain reads:
 - Node/TypeScript worker
 - Viem for RPC reads and log decoding
 - Postgres/Supabase for indexed state
+- Supabase Storage bucket `token-images` for token artwork; `launches.image_url` stores the public URL/path
 - API layer: Next.js/Express/Fastify later; static mock now
 - Cron job / queue worker for holder snapshots and verification polling
 
@@ -58,6 +59,7 @@ create table launches (
   description text,
   image_url text,
   x_url text,
+  discord_url text,
   telegram_url text,
   website_url text,
   status text not null default 'launching',

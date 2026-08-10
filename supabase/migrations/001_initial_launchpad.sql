@@ -11,6 +11,10 @@ create table if not exists public.launches (
   normalized_symbol text not null,
   description text,
   image_url text,
+  x_url text,
+  website_url text,
+  discord_url text,
+  telegram_url text,
   status text not null default 'launching',
   graduation_target_wei numeric not null,
   reserve_raised_wei numeric not null default 0,
@@ -90,3 +94,13 @@ create policy "public read trades" on public.trades for select using (true);
 create policy "public read creators" on public.creators for select using (true);
 create policy "public read holder snapshots" on public.holder_snapshots for select using (true);
 create policy "public read moderation flags" on public.moderation_flags for select using (status <> 'private');
+
+insert into storage.buckets (id, name, public)
+values ('token-images', 'token-images', true)
+on conflict (id) do nothing;
+
+create policy "public read token images" on storage.objects
+  for select using (bucket_id = 'token-images');
+
+create policy "authenticated upload token images" on storage.objects
+  for insert to authenticated with check (bucket_id = 'token-images');

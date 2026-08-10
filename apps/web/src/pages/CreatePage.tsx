@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { assessTokenIdentity, getAntiBotBuyLimit } from '@cronos-launchpad/core';
 import { Badge } from '../components/Badge';
 import { prepareCreateTokenTx } from '../contracts/launchpadClient';
@@ -17,6 +17,7 @@ export function CreatePage() {
   const [websiteLink, setWebsiteLink] = useState('');
   const [discordLink, setDiscordLink] = useState('');
   const [telegramLink, setTelegramLink] = useState('');
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [txHash, setTxHash] = useState<string>();
   const existingIdentities = useMemo(() => getLaunches(), []);
   const wallet = useInjectedWallet();
@@ -33,9 +34,16 @@ export function CreatePage() {
   const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
   const txReadiness = txPreview.ready ? 'ready to sign' : `waiting: ${txPreview.missing.join(', ')}`;
   const previewSocials = [xLink && 'X', websiteLink && 'Website', discordLink && 'Discord', telegramLink && 'Telegram'].filter(Boolean) as string[];
+  useEffect(() => () => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+  }, [imagePreviewUrl]);
   const handleSend = async () => {
     const hash = await wallet.sendTransaction(txPreview);
     if (hash) setTxHash(hash);
+  };
+  const handleImageChange = (file?: File) => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImagePreviewUrl(file ? URL.createObjectURL(file) : '');
   };
 
   return (
@@ -47,6 +55,7 @@ export function CreatePage() {
         <div className="formGrid">
           <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
+          <label className="wide imageUploadLabel">Token image<span className="fieldHelp">Upload square artwork for the token card and detail page.</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => handleImageChange(event.target.files?.[0])} /></label>
           <label className="wide">Description<textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
           <label>Graduation target<span className="fieldHelp">CRO reserve needed before VVS graduation.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
           <label>Initial buy CRO<span className="fieldHelp">Optional first buy sent with token creation.</span><input inputMode="decimal" value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
@@ -59,7 +68,7 @@ export function CreatePage() {
       </div>
       <div className="createPreviewStack">
         <article className="launchCard previewCard">
-          <div className="launchMain"><div className="uploadMock">IMG</div><div><div className="cardTop"><h3>{name || 'Token name'}</h3><span>{symbol ? `$${symbol}` : '$TICKER'}</span></div>{description && <p className="description">{description}</p>}<SocialLinks socials={previewSocials} /></div></div>
+          <div className="launchMain"><div className="uploadMock">{imagePreviewUrl ? <img src={imagePreviewUrl} alt="Token preview" /> : 'IMG'}</div><div><div className="cardTop"><h3>{name || 'Token name'}</h3><span>{symbol ? `$${symbol}` : '$TICKER'}</span></div>{description && <p className="description">{description}</p>}<SocialLinks socials={previewSocials} /></div></div>
           <div className="progress"><span style={{ width: '0%' }} /></div>
           <div className="badges"><Badge tone="blue">Preview</Badge><Badge tone="good">Anti-snipe</Badge><Badge>No tax</Badge></div>
         </article>

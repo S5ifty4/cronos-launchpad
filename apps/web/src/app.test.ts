@@ -4,6 +4,7 @@ import { getLaunches } from './data/api';
 import { prepareCreateTokenTx } from './contracts/launchpadClient';
 import { cronosTestnet, vvsTestnetContracts } from './wallet/chains';
 import { normalizeSocialPlatform } from './components/SocialLinks';
+import { filterLaunches } from './data/exploreFilters';
 
 describe('launchpad web model', () => {
   it('uses shared anti-vamp rules for launch form preflight', () => {
@@ -33,5 +34,13 @@ describe('launchpad web model', () => {
     expect(normalizeSocialPlatform('Web')).toBe('website');
     expect(normalizeSocialPlatform('Discord')).toBe('discord');
     expect(normalizeSocialPlatform('Telegram')).toBe('telegram');
+  });
+
+  it('filters launch board results by tab and search query', () => {
+    const launches = getLaunches();
+    expect(filterLaunches(launches, { tab: 'near', query: '' }).every((launch) => launch.status === 'Near graduation')).toBe(true);
+    expect(filterLaunches(launches, { tab: 'graduated', query: '' }).every((launch) => launch.status === 'Graduated')).toBe(true);
+    expect(filterLaunches(launches, { tab: 'no-tax', query: '' }).every((launch) => launch.taxBips === 0)).toBe(true);
+    expect(filterLaunches(launches, { tab: 'all', query: 'discord' }).some((launch) => launch.socials.includes('Discord'))).toBe(true);
   });
 });

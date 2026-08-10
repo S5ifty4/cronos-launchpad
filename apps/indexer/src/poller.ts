@@ -12,7 +12,7 @@ const vaultEvents = [parseAbiItem('event LpDeposited(address indexed lpToken,add
 export type PollerConfig = { rpcUrl: string; factoryAddress: Address; vaultAddress: Address; fromBlock: bigint; toBlock?: bigint };
 
 export function configFromEnv(env = process.env): PollerConfig {
-  const rpcUrl = env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.com';
+  const rpcUrl = env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/';
   const factoryAddress = env.LAUNCHPAD_FACTORY as Address | undefined;
   const vaultAddress = env.LP_VAULT as Address | undefined;
   if (!factoryAddress || !vaultAddress) throw new Error('Missing LAUNCHPAD_FACTORY or LP_VAULT');

@@ -37,4 +37,4 @@ pnpm --filter @cronos-launchpad/contracts deploy:cronos-testnet
 
 ## Current chain recommendation
 
-Use Cronos testnet now. Keep VVS router/factory addresses configurable until Cronos/VVS confirms the exact whitelisting requirements and testnet/mainnet addresses.
+Use Cronos testnet now. VVS testnet integration uses Cronos Testnet chain ID `338`, RPC `https://evm-t3.cronos.org/`, Smart Router `0xC74C960708f043E04a84038c6D1136EA7Fcb16a1`, and WCRO `0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4`. Keep the VVS factory optional/configurable until direct factory usage or review requirements demand it.

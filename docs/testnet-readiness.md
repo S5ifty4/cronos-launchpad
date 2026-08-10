@@ -14,24 +14,37 @@ Official docs used for this config:
 Create `contracts/.env` or export these in your shell before deployment:
 
 ```bash
-CRONOS_TESTNET_RPC_URL=https://evm-t3.cronos.com
+CRONOS_TESTNET_RPC_URL=https://evm-t3.cronos.org/
 DEPLOYER_PRIVATE_KEY=0x...
-VVS_TESTNET_ROUTER=0x...
+VVS_TESTNET_ROUTER=0xC74C960708f043E04a84038c6D1136EA7Fcb16a1
 ```
 
 Optional but recommended once the Cronos/VVS team confirms them:
 
 ```bash
 VVS_TESTNET_FACTORY=0x...
-VVS_TESTNET_WCRO=0x...
+VVS_TESTNET_WCRO=0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4
 CRONOS_EXPLORER_API_KEY=...
 ```
 
+## Confirmed VVS testnet inputs
+
+VVS does not run a separate VVS-only chain for testnet integration. Its SDK targets Cronos Testnet:
+
+```text
+Chain: Cronos Testnet
+Chain ID: 338
+RPC: https://evm-t3.cronos.org/
+Explorer: https://explorer.cronos.org/testnet
+VVS Smart Router: 0xC74C960708f043E04a84038c6D1136EA7Fcb16a1
+VVS WCRO: 0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4
+```
+
+The router and WCRO addresses were sourced from the official `vvs-finance/swap-sdk` Cronos testnet config and verified to have bytecode on Cronos Testnet RPC.
+
 ## Still needed from Cronos/VVS team
 
-- Official VVS Cronos testnet router address.
 - VVS testnet factory address.
-- WCRO testnet address used by that router.
 - Whether whitelist review expects VVS liquidity at launch or only after graduation.
 - Minimum reserve / liquidity expectations.
 - Required LP posture: locked, burned, or public timelock acceptable.
@@ -80,7 +93,7 @@ launch created
 → lock beneficiary + unlock timestamp are recorded
 ```
 
-The production router address remains configurable. Do not hardcode unknown VVS testnet addresses.
+The production router address remains configurable. Use the SDK-confirmed VVS testnet router for Cronos Testnet deployments, and keep the VVS factory optional until direct factory usage is required.
 
 ## Public proof package after deploy
 

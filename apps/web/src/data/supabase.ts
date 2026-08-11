@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Launch, LaunchStatus } from './types';
+import type { Launch, LaunchStatus, SocialLink } from './types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -54,8 +54,13 @@ function age(createdAt: string) {
   return `${Math.floor(hours / 24)}d`;
 }
 
-function socials(row: LaunchRow) {
-  return [row.x_url && 'X', row.website_url && 'Website', row.discord_url && 'Discord', row.telegram_url && 'Telegram'].filter(Boolean) as string[];
+function socials(row: LaunchRow): SocialLink[] {
+  return [
+    row.website_url && { platform: 'website' as const, url: row.website_url },
+    row.x_url && { platform: 'x' as const, url: row.x_url },
+    row.discord_url && { platform: 'discord' as const, url: row.discord_url },
+    row.telegram_url && { platform: 'telegram' as const, url: row.telegram_url },
+  ].filter((link): link is SocialLink => Boolean(link));
 }
 
 export function mapLaunchRow(row: LaunchRow): Launch {
@@ -92,6 +97,17 @@ export async function fetchSupabaseLaunches() {
     .order('created_at', { ascending: false });
   if (error || !data?.length) return null;
   return data.map((row) => mapLaunchRow(row as LaunchRow));
+}
+
+export async function fetchSupabaseLaunchByAddress(address: string) {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('launches')
+    .select('chain_id,token_address,creator_address,name,symbol,description,image_url,x_url,website_url,discord_url,telegram_url,status,graduation_target_wei,reserve_raised_wei,anti_bot_enabled,tax_bips,created_at')
+    .eq('token_address', address.toLowerCase())
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapLaunchRow(data as LaunchRow);
 }
 
 export async function uploadTokenImage(file: File) {

@@ -1,4 +1,6 @@
 export type LaunchStatus = 'Launching' | 'Near graduation' | 'Graduated';
+export type SocialPlatform = 'website' | 'x' | 'discord' | 'telegram';
+export type SocialLink = { platform: SocialPlatform; url: string };
 
 export type Launch = {
   address: string;
@@ -19,12 +21,12 @@ export type Launch = {
   holders: string;
   description: string;
   status: LaunchStatus;
-  socials: string[];
+  socials: SocialLink[];
   color: string;
   imageUrl?: string;
 };
 
 export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string };
 export type HolderSnapshot = { wallet: string; share: string; note: string };
-export type CreatorProfile = { wallet: string; launches: string; graduated: string; reports: string; totalVolume: string; socials: string[] };
+export type CreatorProfile = { wallet: string; launches: string; graduated: string; reports: string; totalVolume: string; socials: SocialLink[] };
 export type ProofPackage = { label: string; value: string; status: 'ready' | 'pending' }[];

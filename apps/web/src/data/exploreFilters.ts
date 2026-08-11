@@ -22,7 +22,7 @@ function searchableText(launch: Launch) {
     launch.creator,
     launch.description,
     launch.status,
-    ...launch.socials,
+    ...launch.socials.flatMap((social) => [social.platform, social.url]),
   ].join(' ').toLowerCase();
 }
 

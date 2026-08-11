@@ -27,17 +27,27 @@ function tokenCreatedFromLogs(logs: readonly { topics: [] | [`0x${string}`, ...`
   return undefined;
 }
 
+async function finalizeLaunchMetadata(body: Record<string, unknown>) {
+  const response = await fetch('/api/launch-metadata', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`Metadata save failed (${response.status})`);
+}
+
 export function CreatePage() {
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
   const [description, setDescription] = useState('');
   const [graduationTarget, setGraduationTarget] = useState('');
   const [initialBuy, setInitialBuy] = useState('');
-  const [xLink, setXLink] = useState('');
   const [websiteLink, setWebsiteLink] = useState('');
+  const [xLink, setXLink] = useState('');
   const [discordLink, setDiscordLink] = useState('');
   const [telegramLink, setTelegramLink] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [imagePublicUrl, setImagePublicUrl] = useState('');
   const [imageFileName, setImageFileName] = useState('');
   const [imageUploadStatus, setImageUploadStatus] = useState('');
   const [antiBotEnabled, setAntiBotEnabled] = useState(true);
@@ -75,7 +85,12 @@ export function CreatePage() {
       ? 'Launch confirmed'
       : 'Launch submitted'
     : wallet.isPending ? 'Submitting…' : 'Submit create tx';
-  const previewSocials = [xLink && 'X', websiteLink && 'Website', discordLink && 'Discord', telegramLink && 'Telegram'].filter(Boolean) as string[];
+  const previewSocials = [
+    websiteLink && { platform: 'website' as const, url: websiteLink },
+    xLink && { platform: 'x' as const, url: xLink },
+    discordLink && { platform: 'discord' as const, url: discordLink },
+    telegramLink && { platform: 'telegram' as const, url: telegramLink },
+  ].filter(Boolean);
   useEffect(() => () => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
   }, [imagePreviewUrl]);
@@ -99,7 +114,30 @@ export function CreatePage() {
       }
       const tokenAddress = tokenCreatedFromLogs(receipt.logs);
       setTxStatus('confirmed');
-      if (tokenAddress) window.location.assign(`/token/${tokenAddress}`);
+      if (tokenAddress) {
+        await finalizeLaunchMetadata({
+          tokenAddress,
+          chainId: wallet.chainId,
+          creatorAddress: wallet.address,
+          name: name.trim(),
+          symbol: symbol.trim().toUpperCase(),
+          description,
+          imageUrl: imagePublicUrl,
+          websiteUrl: websiteLink,
+          xUrl: xLink,
+          discordUrl: discordLink,
+          telegramUrl: telegramLink,
+          graduationTargetWei: txPreview.args[5].toString(),
+          reserveRaisedWei: txPreview.value.toString(),
+          antiBotEnabled,
+          vvsRouter: vvsTestnetContracts.smartRouter,
+          txHash: hash,
+          blockNumber: receipt.blockNumber.toString(),
+        }).catch((error) => {
+          setTxError(error instanceof Error ? error.message : 'Metadata save failed; token is still confirmed on-chain.');
+        });
+        window.location.assign(`/token/${tokenAddress}`);
+      }
     } catch (error) {
       setTxStatus('failed');
       setSubmittedTxKey(undefined);
@@ -109,6 +147,7 @@ export function CreatePage() {
   const handleImageChange = async (file?: File) => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     setImagePreviewUrl(file ? URL.createObjectURL(file) : '');
+    setImagePublicUrl('');
     setImageFileName(file?.name ?? '');
     setImageUploadStatus(file ? 'Uploading image…' : '');
     if (!file) return;
@@ -116,6 +155,7 @@ export function CreatePage() {
       const publicUrl = await uploadTokenImage(file);
       if (publicUrl) {
         setImagePreviewUrl(publicUrl);
+        setImagePublicUrl(publicUrl);
         setImageUploadStatus('Image uploaded to Supabase Storage.');
       } else {
         setImageUploadStatus('Local preview only until Supabase env is configured.');
@@ -138,8 +178,8 @@ export function CreatePage() {
           <label className="wide">Description<textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
           <label>Graduation target<span className="fieldHelp">CRO reserve needed before VVS graduation.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
           <label>Initial buy CRO<span className="fieldHelp">Optional first buy sent with token creation.</span><input inputMode="decimal" value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
-          <label>X<input type="url" value={xLink} onChange={(event) => setXLink(event.target.value)} /></label>
           <label>Website<input type="url" value={websiteLink} onChange={(event) => setWebsiteLink(event.target.value)} /></label>
+          <label>X<input type="url" value={xLink} onChange={(event) => setXLink(event.target.value)} /></label>
           <label>Discord<input type="url" value={discordLink} onChange={(event) => setDiscordLink(event.target.value)} /></label>
           <label>Telegram<input type="url" value={telegramLink} onChange={(event) => setTelegramLink(event.target.value)} /></label>
         </div>

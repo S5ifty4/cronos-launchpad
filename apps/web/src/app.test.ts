@@ -81,6 +81,6 @@ describe('launchpad web model', () => {
     expect(filterLaunches(launches, { tab: 'near', query: '' }).every((launch) => launch.status === 'Near graduation')).toBe(true);
     expect(filterLaunches(launches, { tab: 'graduated', query: '' }).every((launch) => launch.status === 'Graduated')).toBe(true);
     expect(filterLaunches(launches, { tab: 'no-tax', query: '' }).every((launch) => launch.taxBips === 0)).toBe(true);
-    expect(filterLaunches(launches, { tab: 'all', query: 'discord' }).some((launch) => launch.socials.includes('Discord'))).toBe(true);
+    expect(filterLaunches(launches, { tab: 'all', query: 'discord' }).some((launch) => launch.socials.some((social) => social.platform === 'discord'))).toBe(true);
   });
 });

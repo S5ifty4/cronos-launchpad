@@ -1,19 +1,37 @@
-export type SocialPlatform = 'x' | 'website' | 'discord' | 'telegram';
+import type { SocialLink, SocialPlatform } from '../data/types';
 
 const platformLabels: Record<SocialPlatform, string> = {
-  x: 'X',
   website: 'Website',
+  x: 'X',
   discord: 'Discord',
   telegram: 'Telegram',
 };
 
+const platformOrder: SocialPlatform[] = ['website', 'x', 'discord', 'telegram'];
+
 export function normalizeSocialPlatform(value: string): SocialPlatform {
   const normalized = value.trim().toLowerCase();
-  if (normalized === 'x' || normalized === 'twitter') return 'x';
   if (normalized === 'web' || normalized === 'website' || normalized === 'site') return 'website';
+  if (normalized === 'x' || normalized === 'twitter') return 'x';
   if (normalized === 'discord') return 'discord';
   if (normalized === 'telegram' || normalized === 'tg') return 'telegram';
   return 'website';
+}
+
+function fallbackUrl(platform: SocialPlatform) {
+  if (platform === 'website') return 'https://cronosforge.com';
+  if (platform === 'x') return 'https://x.com/cronos_chain';
+  if (platform === 'discord') return 'https://discord.com';
+  return 'https://t.me/cronos_official';
+}
+
+function normalizeSocial(value: string | SocialLink): SocialLink {
+  if (typeof value === 'string') {
+    const platform = normalizeSocialPlatform(value);
+    return { platform, url: fallbackUrl(platform) };
+  }
+  const platform = normalizeSocialPlatform(value.platform);
+  return { platform, url: value.url || fallbackUrl(platform) };
 }
 
 function SocialIcon({ platform }: { platform: SocialPlatform }) {
@@ -41,16 +59,18 @@ function SocialIcon({ platform }: { platform: SocialPlatform }) {
   );
 }
 
-export function SocialLinks({ socials }: { socials: string[] }) {
-  const platforms = [...new Set(socials.filter(Boolean).map(normalizeSocialPlatform))];
-  if (!platforms.length) return null;
+export function SocialLinks({ socials }: { socials: (string | SocialLink)[] }) {
+  const byPlatform = new Map<SocialPlatform, SocialLink>();
+  socials.filter(Boolean).map(normalizeSocial).forEach((link) => byPlatform.set(link.platform, link));
+  const links = platformOrder.map((platform) => byPlatform.get(platform)).filter(Boolean) as SocialLink[];
+  if (!links.length) return null;
   return (
     <div className="socials" aria-label="Social links">
-      {platforms.map((platform) => (
-        <span className="socialIcon" key={platform} title={platformLabels[platform]} aria-label={platformLabels[platform]}>
-          <SocialIcon platform={platform} />
-          <span className="srOnly">{platformLabels[platform]}</span>
-        </span>
+      {links.map((link) => (
+        <a className="socialIcon" key={link.platform} href={link.url} target="_blank" rel="noreferrer" title={platformLabels[link.platform]} aria-label={platformLabels[link.platform]} onClick={(event) => event.stopPropagation()}>
+          <SocialIcon platform={link.platform} />
+          <span className="srOnly">{platformLabels[link.platform]}</span>
+        </a>
       ))}
     </div>
   );

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+declare const process: { env: Record<string, string | undefined> };
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -92,7 +92,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return send(res, 400, { error: 'missing_required_launch_fields' });
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const row = {
     chain_id: chainId,
     token_address: tokenAddress,
@@ -118,8 +117,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     created_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from('launches').upsert(row, { onConflict: 'token_address' });
-  if (error) return send(res, 500, { error: 'supabase_upsert_failed', message: error.message });
+  const response = await fetch(`${supabaseUrl}/rest/v1/launches?on_conflict=token_address`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceKey,
+      authorization: `Bearer ${serviceKey}`,
+      'content-type': 'application/json',
+      prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(row),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    return send(res, 500, { error: 'supabase_upsert_failed', message });
+  }
 
   return send(res, 200, { ok: true, tokenAddress });
 }

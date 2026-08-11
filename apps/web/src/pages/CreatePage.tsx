@@ -5,6 +5,7 @@ import { prepareCreateTokenTx } from '../contracts/launchpadClient';
 import { getLaunches } from '../data/api';
 import { uploadTokenImage } from '../data/supabase';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
+import { vvsTestnetContracts } from '../wallet/chains';
 import { ToggleRow } from '../components/ToggleRow';
 import { SocialLinks } from '../components/SocialLinks';
 
@@ -19,7 +20,9 @@ export function CreatePage() {
   const [discordLink, setDiscordLink] = useState('');
   const [telegramLink, setTelegramLink] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [imageFileName, setImageFileName] = useState('');
   const [imageUploadStatus, setImageUploadStatus] = useState('');
+  const [antiBotEnabled, setAntiBotEnabled] = useState(true);
   const [txHash, setTxHash] = useState<string>();
   const [txError, setTxError] = useState<string>();
   const existingIdentities = useMemo(() => getLaunches(), []);
@@ -29,11 +32,12 @@ export function CreatePage() {
     symbol,
     graduationTargetCro: graduationTarget,
     initialBuyCro: initialBuy,
-    antiBotEnabled: true,
+    antiBotEnabled,
+    vvsRouter: vvsTestnetContracts.smartRouter,
     lpBeneficiary: wallet.address as `0x${string}` | undefined,
-  }), [name, symbol, graduationTarget, initialBuy, wallet.address]);
+  }), [name, symbol, graduationTarget, initialBuy, antiBotEnabled, wallet.address]);
   const identity = useMemo(() => assessTokenIdentity({ name, symbol }, existingIdentities), [name, symbol, existingIdentities]);
-  const currentLimit = getAntiBotBuyLimit({ elapsedSeconds: 180, baseLimitCro: 1_000 });
+  const currentLimit = antiBotEnabled ? getAntiBotBuyLimit({ elapsedSeconds: 180, baseLimitCro: 1_000 }) : undefined;
   const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
   const txReadiness = txPreview.ready ? 'ready to sign' : `waiting: ${txPreview.missing.join(', ')}`;
   const previewSocials = [xLink && 'X', websiteLink && 'Website', discordLink && 'Discord', telegramLink && 'Telegram'].filter(Boolean) as string[];
@@ -52,6 +56,7 @@ export function CreatePage() {
   const handleImageChange = async (file?: File) => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     setImagePreviewUrl(file ? URL.createObjectURL(file) : '');
+    setImageFileName(file?.name ?? '');
     setImageUploadStatus(file ? 'Uploading image…' : '');
     if (!file) return;
     try {
@@ -76,7 +81,7 @@ export function CreatePage() {
         <div className="formGrid">
           <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
-          <label className="wide imageUploadLabel">Token image<span className="fieldHelp">Upload square artwork for the token card and detail page.</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleImageChange(event.target.files?.[0])} />{imageUploadStatus && <span className="fieldHelp">{imageUploadStatus}</span>}</label>
+          <label className="wide imageUploadLabel">Token image<span className="fieldHelp">Upload square artwork for the token card and detail page.</span><span className="filePicker"><span className="button secondary filePickerButton">Choose image</span><span className="filePickerName">{imageFileName || 'No image selected'}</span><input className="srOnly" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleImageChange(event.target.files?.[0])} /></span>{imageUploadStatus && <span className="fieldHelp">{imageUploadStatus}</span>}</label>
           <label className="wide">Description<textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
           <label>Graduation target<span className="fieldHelp">CRO reserve needed before VVS graduation.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
           <label>Initial buy CRO<span className="fieldHelp">Optional first buy sent with token creation.</span><input inputMode="decimal" value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
@@ -85,13 +90,32 @@ export function CreatePage() {
           <label>Discord<input type="url" value={discordLink} onChange={(event) => setDiscordLink(event.target.value)} /></label>
           <label>Telegram<input type="url" value={telegramLink} onChange={(event) => setTelegramLink(event.target.value)} /></label>
         </div>
-        <div className="toggles"><ToggleRow label="Auto-graduate when reserve fills" /><ToggleRow label="Anti-snipe launch window" /><ToggleRow label="Token tax" enabled={false} /></div>
+        <div className="toggles">
+          <ToggleRow
+            label="Graduation enabled at reserve target"
+            enabled
+            disabled
+            info="When the CRO reserve reaches the graduation target, the launch becomes eligible to graduate into the configured VVS route and send LP into the timelock vault. v0 does not fully auto-submit that transaction yet; a graduation transaction still has to be called after the target is met."
+          />
+          <ToggleRow
+            label="Anti-snipe launch window"
+            enabled={antiBotEnabled}
+            onChange={setAntiBotEnabled}
+            info="Optional first-10-minute buy-limit window. Current v0 calldata uses 600 seconds: first 2 minutes cap buys at 5% of the base limit, minutes 2–5 at 15%, minutes 5–10 at 35%, then the full base limit."
+          />
+          <ToggleRow
+            label="Token tax"
+            enabled={false}
+            disabled
+            info="Token tax is disabled for v0. CronosForge launches are currently no-tax so buyers do not need to reason about hidden transfer fees."
+          />
+        </div>
       </div>
       <div className="createPreviewStack">
         <article className="launchCard previewCard">
           <div className="launchMain"><div className="uploadMock">{imagePreviewUrl ? <img src={imagePreviewUrl} alt="Token preview" /> : 'IMG'}</div><div><div className="cardTop"><h3>{name || 'Token name'}</h3><span>{symbol ? `$${symbol}` : '$TICKER'}</span></div>{description && <p className="description">{description}</p>}<SocialLinks socials={previewSocials} /></div></div>
           <div className="progress"><span style={{ width: '0%' }} /></div>
-          <div className="badges"><Badge tone="blue">Preview</Badge><Badge tone="good">Anti-snipe</Badge><Badge>No tax</Badge></div>
+          <div className="badges"><Badge tone="blue">Preview</Badge>{antiBotEnabled && <Badge tone="good">Anti-snipe</Badge>}<Badge>No tax</Badge></div>
         </article>
         <div className="terminalCard">
           <h3>Preflight + cost</h3>
@@ -100,7 +124,7 @@ export function CreatePage() {
             <dt>Normalized name</dt><dd>{identity.normalizedName}</dd>
             <dt>Normalized symbol</dt><dd>{identity.normalizedSymbol}</dd>
             <dt>Reasons</dt><dd>{identity.reasons.length ? identity.reasons.join(', ') : 'None'}</dd>
-            <dt>Minute 3 cap</dt><dd>{currentLimit} CRO max buy</dd>
+            <dt>Anti-snipe cap</dt><dd>{currentLimit ? `${currentLimit} CRO max buy at minute 3` : 'Disabled for this launch'}</dd>
             <dt>Estimated total</dt><dd>{totalCost.toLocaleString()} CRO incl. mock fee</dd>
             <dt>Tx readiness</dt><dd>{txReadiness}</dd>
             <dt>Calldata</dt><dd>{txPreview.data.slice(0, 18)}…{txPreview.data.slice(-10)}</dd>

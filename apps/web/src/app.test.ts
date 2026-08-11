@@ -20,6 +20,8 @@ describe('launchpad web model', () => {
     expect(tx.value).toBe(250000000000000000000n);
     expect(tx.ready).toBe(false);
     expect(tx.args).toHaveLength(12);
+    const noAntiSnipe = prepareCreateTokenTx({ name: 'Cronos Vault', symbol: 'CVLT', graduationTargetCro: '65000', initialBuyCro: '250', antiBotEnabled: false });
+    expect(noAntiSnipe.args[6]).toBe(false);
   });
 
   it('uses official Cronos testnet and VVS testnet addresses', () => {

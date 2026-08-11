@@ -46,7 +46,7 @@ export function HomePage() {
       </section>
 
       <section id="board" className="panel boardPanel">
-        <div className="sectionHeader"><div><p className="eyebrow">Explore launches</p><h2>Live board UX for protected Cronos runners</h2></div><div className="viewControls"><button>Grid</button><button>{visibleLaunches.length} shown</button><button>Filters</button></div></div>
+        <div className="sectionHeader"><div><p className="eyebrow">Explore launches</p><h2>Live board UX for protected Cronos runners</h2></div></div>
         <div className="filterBar">
           <label className="searchLabel"><span className="srOnly">Search launches</span><input className="searchInput" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search launches" /></label>
           <div className="tabs" role="tablist" aria-label="Launch filters">

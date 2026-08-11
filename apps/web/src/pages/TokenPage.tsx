@@ -12,7 +12,7 @@ export function TokenPage({ address }: { address?: string }) {
   return (
     <section className="panel tokenDetail">
       <div className="tokenMainColumn">
-        <div className="tokenHeader"><TokenGlyph launch={launch} size="large" /><div><p className="eyebrow">Token detail prototype</p><h2>{launch.name} <span>${launch.symbol}</span></h2><p>{launch.description}</p><SocialLinks socials={launch.socials} /><div className="badges"><Badge tone="good">Protected identity</Badge><Badge tone="blue">VVS route</Badge><Badge>No tax</Badge><Badge tone="warn">{launch.status}</Badge></div></div></div>
+        <div className="tokenHeader"><TokenGlyph launch={launch} size="large" /><div><p className="eyebrow">Token detail prototype</p><h2>{launch.name} <span>${launch.symbol}</span></h2><p>{launch.description}</p><SocialLinks socials={launch.socials} /><div className="badges"><Badge>No tax</Badge><Badge tone="warn">{launch.status}</Badge></div></div></div>
         <div className="detailStats"><Metric label="market cap" value={launch.marketCap} /><Metric label="24h volume" value={launch.volume24h} /><Metric label="holders" value={launch.holders} /><Metric label="progress" value={`${launch.progress}%`} /></div>
         <ChartMock />
         <div className="tablesGrid"><TradesTable trades={getLaunchTrades()} /><HoldersTable holders={getLaunchHolders()} /></div>

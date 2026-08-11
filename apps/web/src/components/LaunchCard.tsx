@@ -19,9 +19,6 @@ export function LaunchCard({ launch }: { launch: Launch }) {
       <div className="cardMetrics"><span>{launch.progress}% to graduation</span><span>{launch.marketCap} mcap</span><span>{launch.volume24h} vol</span></div>
       <div className="badges">
         <Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge>
-        {launch.antiBot && <Badge tone="good">Anti-snipe</Badge>}
-        {launch.protectedName && <Badge tone="good">Protected name</Badge>}
-        {launch.vvsGraduation && <Badge tone="blue">VVS route</Badge>}
         {launch.taxBips === 0 && <Badge>No tax</Badge>}
       </div>
       <p className="small">Created by {launch.creator} · {launch.age} ago</p>

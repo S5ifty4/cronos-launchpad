@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { assessTokenIdentity } from '@cronos-launchpad/core';
 import { getLaunches } from './data/api';
 import { prepareCreateTokenTx } from './contracts/launchpadClient';
+import { envAddress } from './contracts/addresses';
 import { cronosTestnet, vvsTestnetContracts } from './wallet/chains';
 import { cronosTestnetChain, walletConnectProjectId } from './wallet/reown';
 import { normalizeSocialPlatform } from './components/SocialLinks';
@@ -22,6 +23,11 @@ describe('launchpad web model', () => {
     expect(tx.args).toHaveLength(12);
     const noAntiSnipe = prepareCreateTokenTx({ name: 'Cronos Vault', symbol: 'CVLT', graduationTargetCro: '65000', initialBuyCro: '250', antiBotEnabled: false });
     expect(noAntiSnipe.args[6]).toBe(false);
+  });
+
+  it('trims env-loaded contract addresses', () => {
+    expect(envAddress('0xb39452a805657c6aaef5d804934d44c814f35906\n')).toBe('0xb39452a805657c6aaef5d804934d44c814f35906');
+    expect(envAddress('')).toBeUndefined();
   });
 
   it('uses official Cronos testnet and VVS testnet addresses', () => {

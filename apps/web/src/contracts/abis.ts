@@ -15,7 +15,7 @@ export const launchpadFactoryAbi = [
       { name: 'antiBotBaseLimitWei', type: 'uint256' },
       { name: 'vvsRouter', type: 'address' },
       { name: 'lpBeneficiary', type: 'address' },
-      { name: 'lpLockDuration', type: 'uint256' },
+      { name: 'lpLockDurationSeconds', type: 'uint64' },
     ],
     outputs: [{ name: 'token', type: 'address' }],
   },

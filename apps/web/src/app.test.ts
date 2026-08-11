@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assessTokenIdentity } from '@cronos-launchpad/core';
+import { toFunctionSelector } from 'viem';
+import { launchpadFactoryAbi } from './contracts/abis';
 import { getLaunches } from './data/api';
 import { prepareCreateTokenTx } from './contracts/launchpadClient';
 import { envAddress } from './contracts/addresses';
@@ -18,11 +20,19 @@ describe('launchpad web model', () => {
   it('prepares deterministic create-token calldata', () => {
     const tx = prepareCreateTokenTx({ name: 'Cronos Vault', symbol: 'CVLT', graduationTargetCro: '65000', initialBuyCro: '250', antiBotEnabled: true });
     expect(tx.data.startsWith('0x')).toBe(true);
+    expect(tx.data.slice(0, 10)).toBe('0xd928a6db');
     expect(tx.value).toBe(250000000000000000000n);
     expect(tx.ready).toBe(false);
     expect(tx.args).toHaveLength(12);
     const noAntiSnipe = prepareCreateTokenTx({ name: 'Cronos Vault', symbol: 'CVLT', graduationTargetCro: '65000', initialBuyCro: '250', antiBotEnabled: false });
     expect(noAntiSnipe.args[6]).toBe(false);
+  });
+
+  it('keeps frontend create-token ABI selector aligned with deployed contract signature', () => {
+    const createToken = launchpadFactoryAbi.find((entry) => entry.type === 'function' && entry.name === 'createToken');
+    expect(createToken).toBeTruthy();
+    expect(toFunctionSelector(createToken!)).toBe('0xd928a6db');
+    expect(createToken!.inputs.at(-1)?.type).toBe('uint64');
   });
 
   it('keeps create-token tx disabled until required transaction fields are valid', () => {

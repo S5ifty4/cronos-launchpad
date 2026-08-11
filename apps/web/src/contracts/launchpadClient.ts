@@ -22,17 +22,40 @@ function normalizeNumber(value: string) {
   return value.replace(/,/g, '').trim() || '0';
 }
 
+function isPositiveNumber(value: string) {
+  const normalized = normalizeNumber(value);
+  return /^\d+(\.\d+)?$/.test(normalized) && Number(normalized) > 0;
+}
+
+function isNonNegativeNumber(value: string) {
+  const normalized = normalizeNumber(value);
+  return /^\d+(\.\d+)?$/.test(normalized) && Number(normalized) >= 0;
+}
+
 export function prepareCreateTokenTx(form: CreateTokenForm) {
   const to = addresses.cronosTestnet.launchpadFactory;
   const vvsRouter = form.vvsRouter ?? zeroAddress;
   const lpBeneficiary = form.lpBeneficiary ?? zeroAddress;
+  const trimmedName = form.name.trim();
+  const trimmedSymbol = form.symbol.trim().toUpperCase();
+  const missing = [
+    !to && 'VITE_CRONOS_TESTNET_FACTORY',
+    vvsRouter === zeroAddress && 'VITE_VVS_ROUTER',
+    lpBeneficiary === zeroAddress && 'wallet address',
+    !trimmedName && 'token name',
+    !trimmedSymbol && 'symbol',
+    !isPositiveNumber(form.graduationTargetCro) && 'graduation target',
+    !isNonNegativeNumber(form.initialBuyCro) && 'initial buy',
+  ].filter(Boolean) as string[];
+  const graduationTargetCro = isPositiveNumber(form.graduationTargetCro) ? normalizeNumber(form.graduationTargetCro) : '0';
+  const initialBuyCro = isNonNegativeNumber(form.initialBuyCro) ? normalizeNumber(form.initialBuyCro) : '0';
   const args = [
-    form.name.trim(),
-    form.symbol.trim().toUpperCase(),
-    keccak256(stringToBytes(form.name.trim().toLowerCase())),
-    keccak256(stringToBytes(form.symbol.trim().toUpperCase())),
+    trimmedName,
+    trimmedSymbol,
+    keccak256(stringToBytes(trimmedName.toLowerCase())),
+    keccak256(stringToBytes(trimmedSymbol)),
     oneBillion,
-    parseEther(normalizeNumber(form.graduationTargetCro)),
+    parseEther(graduationTargetCro),
     form.antiBotEnabled,
     form.antiBotDurationSeconds ?? 600n,
     parseEther(normalizeNumber(form.antiBotBaseLimitCro ?? '1000')),
@@ -42,10 +65,10 @@ export function prepareCreateTokenTx(form: CreateTokenForm) {
   ] as const;
   return {
     to,
-    value: parseEther(normalizeNumber(form.initialBuyCro)),
+    value: parseEther(initialBuyCro),
     data: encodeFunctionData({ abi: launchpadFactoryAbi, functionName: 'createToken', args }),
     args,
-    ready: Boolean(to && vvsRouter !== zeroAddress && lpBeneficiary !== zeroAddress),
-    missing: [!to && 'VITE_CRONOS_TESTNET_FACTORY', vvsRouter === zeroAddress && 'VITE_VVS_ROUTER', lpBeneficiary === zeroAddress && 'wallet address'].filter(Boolean),
+    ready: missing.length === 0,
+    missing,
   };
 }

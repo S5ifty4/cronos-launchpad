@@ -25,6 +25,15 @@ describe('launchpad web model', () => {
     expect(noAntiSnipe.args[6]).toBe(false);
   });
 
+  it('keeps create-token tx disabled until required transaction fields are valid', () => {
+    const blank = prepareCreateTokenTx({ name: '', symbol: '', graduationTargetCro: '', initialBuyCro: '', antiBotEnabled: true });
+    expect(blank.ready).toBe(false);
+    expect(blank.missing).toEqual(expect.arrayContaining(['token name', 'symbol', 'graduation target', 'wallet address']));
+    const invalidNumber = prepareCreateTokenTx({ name: 'Cronut', symbol: 'CRONUT', graduationTargetCro: 'abc', initialBuyCro: '0', antiBotEnabled: true });
+    expect(invalidNumber.ready).toBe(false);
+    expect(invalidNumber.missing).toContain('graduation target');
+  });
+
   it('trims env-loaded contract addresses', () => {
     expect(envAddress('0xb39452a805657c6aaef5d804934d44c814f35906\n')).toBe('0xb39452a805657c6aaef5d804934d44c814f35906');
     expect(envAddress('')).toBeUndefined();

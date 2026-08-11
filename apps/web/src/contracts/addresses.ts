@@ -3,10 +3,12 @@ export function envAddress(value: unknown) {
   return address ? address as `0x${string}` : undefined;
 }
 
+const env = import.meta.env ?? {};
+
 export const addresses = {
   cronosTestnet: {
-    launchpadFactory: envAddress(import.meta.env.VITE_CRONOS_TESTNET_FACTORY),
-    nameRegistry: envAddress(import.meta.env.VITE_CRONOS_TESTNET_REGISTRY),
-    lpVault: envAddress(import.meta.env.VITE_CRONOS_TESTNET_VAULT),
+    launchpadFactory: envAddress(env.VITE_CRONOS_TESTNET_FACTORY),
+    nameRegistry: envAddress(env.VITE_CRONOS_TESTNET_REGISTRY),
+    lpVault: envAddress(env.VITE_CRONOS_TESTNET_VAULT),
   },
 } as const;

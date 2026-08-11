@@ -20,11 +20,27 @@ export function configFromEnv(env = process.env): PollerConfig {
   return { rpcUrl, factoryAddress, vaultAddress, fromBlock: BigInt(env.FROM_BLOCK ?? '0'), toBlock: env.TO_BLOCK ? BigInt(env.TO_BLOCK) : undefined };
 }
 
+const maxLogRange = 1_900n;
+
+export function blockRanges(fromBlock: bigint, toBlock: bigint, step = maxLogRange) {
+  if (toBlock < fromBlock) return [];
+  const ranges: { fromBlock: bigint; toBlock: bigint }[] = [];
+  for (let start = fromBlock; start <= toBlock; start += step + 1n) {
+    const end = start + step > toBlock ? toBlock : start + step;
+    ranges.push({ fromBlock: start, toBlock: end });
+  }
+  return ranges;
+}
+
 export async function pollLogs(config: PollerConfig) {
   const client = createPublicClient({ chain: cronosTestnet, transport: http(config.rpcUrl) });
   const toBlock = config.toBlock ?? await client.getBlockNumber();
-  const factoryLogs = await client.getLogs({ address: config.factoryAddress, events: factoryEvents, fromBlock: config.fromBlock, toBlock });
-  const vaultLogs = await client.getLogs({ address: config.vaultAddress, events: vaultEvents, fromBlock: config.fromBlock, toBlock });
+  const factoryLogs = [];
+  const vaultLogs = [];
+  for (const range of blockRanges(config.fromBlock, toBlock)) {
+    factoryLogs.push(...await client.getLogs({ address: config.factoryAddress, events: factoryEvents, ...range }));
+    vaultLogs.push(...await client.getLogs({ address: config.vaultAddress, events: vaultEvents, ...range }));
+  }
   const events: DecodedLaunchpadEvent[] = [...factoryLogs, ...vaultLogs].map((log) => {
     if (log.eventName === 'TokenCreated') return { type: 'TokenCreated', token: log.args.token!, creator: log.args.creator!, name: log.args.name!, symbol: log.args.symbol!, graduationTargetWei: log.args.graduationTargetWei!, antiBotEnabled: log.args.antiBotEnabled!, vvsRouter: log.args.vvsRouter!, blockNumber: log.blockNumber, txHash: log.transactionHash };
     if (log.eventName === 'TokenBought') return { type: 'TokenBought', token: log.args.token!, buyer: log.args.buyer!, croIn: log.args.croIn!, reserveRaisedWei: log.args.reserveRaisedWei!, blockNumber: log.blockNumber, txHash: log.transactionHash };

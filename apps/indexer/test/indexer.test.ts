@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { describeHandler, nextState } from '../src/index.js';
-import { summarizeSimulationProof } from '../src/poller.js';
+import { blockRanges, summarizeSimulationProof } from '../src/poller.js';
 
 describe('indexer skeleton', () => {
   it('advances last indexed block from decoded events', () => {
@@ -14,6 +14,13 @@ describe('indexer skeleton', () => {
 
   it('maps event handlers', () => {
     assert.equal(describeHandler({ type: 'LpDeposited', lpToken: '0xlp', beneficiary: '0xben', amount: 1n, unlocksAt: 2n, blockNumber: 3n, txHash: '0xhash' }), 'record LP lock 0xlp');
+  });
+
+  it('chunks log scans under Cronos RPC block-range limits', () => {
+    assert.deepEqual(blockRanges(10n, 15n, 2n), [
+      { fromBlock: 10n, toBlock: 12n },
+      { fromBlock: 13n, toBlock: 15n },
+    ]);
   });
 
   it('summarizes local simulation proof completeness', () => {

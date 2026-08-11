@@ -29,7 +29,14 @@ a { color: inherit; } button, input, textarea { font: inherit; }
 .navLinks { display: flex; gap: 8px; justify-content: center; }
 .navLinks a { color: var(--muted); text-decoration: none; border-radius: 999px; padding: 10px 12px; font-size: 14px; font-weight: 800; }
 .navLinks a:hover { color: var(--white); background: rgba(255,255,255,.06); }
-.connectButton { justify-self: end; text-decoration: none; border-radius: 999px; background: var(--white); color: #000; padding: 12px 18px; font-weight: 900; }
+.connectButton { justify-self: end; text-decoration: none; border: 0; border-radius: 999px; background: var(--white); color: #000; padding: 12px 18px; font-weight: 900; cursor: pointer; }
+.connectButton.muted { opacity: .65; cursor: wait; }
+.connectButton.warn { background: var(--orange); color: #170900; }
+.connectButton.connected { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: var(--white); border: 1px solid var(--line); }
+.walletGroup { justify-self: end; display: inline-flex; align-items: center; gap: 8px; }
+.walletDot { width: 8px; height: 8px; border-radius: 999px; background: #42ff9a; box-shadow: 0 0 14px rgba(66,255,154,.75); }
+.disconnectButton { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+.disconnectButton:hover { color: var(--white); border-color: rgba(255,255,255,.35); }
 
 .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr); gap: 18px; margin-bottom: 18px; }
 .heroCopy, .heroBoard, .panel { border: 1px solid var(--line); background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.026)); border-radius: 34px; box-shadow: inset 0 1px rgba(255,255,255,.08), 0 24px 90px rgba(0,0,0,.34); }
@@ -161,7 +168,7 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
 }
 @media (max-width: 430px) {
   .topNav { top: 8px; grid-template-columns: 1fr; justify-items: stretch; gap: 10px; }
-  .brand, .connectButton { justify-self: stretch; justify-content: center; }
+  .brand, .connectButton, .walletGroup { justify-self: stretch; justify-content: center; }
   h1 { font-size: 40px; }
   h2 { font-size: 30px; }
   .heroCopy, .heroBoard, .panel { padding: 18px; }

@@ -3,6 +3,7 @@ import { assessTokenIdentity } from '@cronos-launchpad/core';
 import { getLaunches } from './data/api';
 import { prepareCreateTokenTx } from './contracts/launchpadClient';
 import { cronosTestnet, vvsTestnetContracts } from './wallet/chains';
+import { cronosTestnetChain, walletConnectProjectId } from './wallet/reown';
 import { normalizeSocialPlatform } from './components/SocialLinks';
 import { filterLaunches } from './data/exploreFilters';
 
@@ -27,6 +28,12 @@ describe('launchpad web model', () => {
     expect(cronosTestnet.blockExplorerUrls).toContain('https://explorer.cronos.org/testnet');
     expect(vvsTestnetContracts.smartRouter).toBe('0xC74C960708f043E04a84038c6D1136EA7Fcb16a1');
     expect(vvsTestnetContracts.wcro).toBe('0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4');
+  });
+
+  it('configures Reown/wagmi for CronosForge on Cronos testnet', () => {
+    expect(cronosTestnetChain.id).toBe(338);
+    expect(cronosTestnetChain.rpcUrls.default.http).toContain('https://evm-t3.cronos.org/');
+    expect(walletConnectProjectId).toBeTruthy();
   });
 
   it('normalizes social labels to icon platforms', () => {

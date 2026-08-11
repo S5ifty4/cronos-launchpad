@@ -4,7 +4,7 @@ import { Badge } from '../components/Badge';
 import { prepareCreateTokenTx } from '../contracts/launchpadClient';
 import { getLaunches } from '../data/api';
 import { uploadTokenImage } from '../data/supabase';
-import { useInjectedWallet } from '../wallet/useInjectedWallet';
+import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 import { ToggleRow } from '../components/ToggleRow';
 import { SocialLinks } from '../components/SocialLinks';
 
@@ -21,8 +21,9 @@ export function CreatePage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [imageUploadStatus, setImageUploadStatus] = useState('');
   const [txHash, setTxHash] = useState<string>();
+  const [txError, setTxError] = useState<string>();
   const existingIdentities = useMemo(() => getLaunches(), []);
-  const wallet = useInjectedWallet();
+  const wallet = useLaunchpadWallet();
   const txPreview = useMemo(() => prepareCreateTokenTx({
     name,
     symbol,
@@ -40,8 +41,13 @@ export function CreatePage() {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
   }, [imagePreviewUrl]);
   const handleSend = async () => {
-    const hash = await wallet.sendTransaction(txPreview);
-    if (hash) setTxHash(hash);
+    setTxError(undefined);
+    try {
+      const hash = await wallet.sendTransaction(txPreview);
+      if (hash) setTxHash(hash);
+    } catch (error) {
+      setTxError(error instanceof Error ? error.message : 'Transaction rejected');
+    }
   };
   const handleImageChange = async (file?: File) => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
@@ -99,8 +105,9 @@ export function CreatePage() {
             <dt>Tx readiness</dt><dd>{txReadiness}</dd>
             <dt>Calldata</dt><dd>{txPreview.data.slice(0, 18)}…{txPreview.data.slice(-10)}</dd>
           </dl>
-          <button className="button primary" disabled={!txPreview.ready || !wallet.isCorrectChain} onClick={handleSend}>Submit create tx</button>
+          <button className="button primary" disabled={!txPreview.ready || !wallet.isCorrectChain || wallet.isPending} onClick={handleSend}>{wallet.isPending ? 'Submitting…' : 'Submit create tx'}</button>
           {wallet.error && <p className="small">Wallet: {wallet.error}</p>}
+          {txError && <p className="small">Wallet: {txError}</p>}
           {txHash && <p className="small">Tx hash: {txHash}</p>}
         </div>
       </div>

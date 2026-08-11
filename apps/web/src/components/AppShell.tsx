@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { WalletStatus } from './WalletStatus';
 
 const nav = [['Explore', '/'], ['Create', '/create'], ['Token page', '/token/338/0xcrojack'], ['Creator', '/creator/0x6819'], ['Admin', '/admin'], ['Proof', '/proof'], ['Docs', '/docs/how-it-works']];
+const legal = [['Terms', '/terms'], ['Privacy', '/privacy'], ['Risk disclaimer', '/risk-disclaimer']];
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -12,6 +13,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         <WalletStatus />
       </nav>
       {children}
+      <footer className="siteFooter">
+        <div>
+          <strong>CronosForge</strong>
+          <p>Testnet MVP for protected Cronos launches. Not financial advice; verify every wallet prompt and token source before signing.</p>
+        </div>
+        <div className="footerLinks">
+          {legal.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
+          <a href="/docs/risks">Docs: risks</a>
+        </div>
+      </footer>
     </main>
   );
 }

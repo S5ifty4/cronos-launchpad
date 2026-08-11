@@ -4,6 +4,7 @@ import { CreatePage } from './pages/CreatePage';
 import { CreatorPage } from './pages/CreatorPage';
 import { DocsPage } from './pages/DocsPage';
 import { HomePage } from './pages/HomePage';
+import { LegalPage } from './pages/LegalPage';
 import { ProofPage } from './pages/ProofPage';
 import { TokenPage } from './pages/TokenPage';
 
@@ -16,6 +17,9 @@ function route(pathname: string) {
   if (pathname === '/docs/risks') return <DocsPage topic="risks" />;
   if (pathname === '/docs/fees') return <DocsPage topic="fees" />;
   if (pathname === '/docs/how-it-works') return <DocsPage topic="how-it-works" />;
+  if (pathname === '/terms') return <LegalPage topic="terms" />;
+  if (pathname === '/privacy') return <LegalPage topic="privacy" />;
+  if (pathname === '/risk-disclaimer') return <LegalPage topic="risks" />;
   return <HomePage />;
 }
 

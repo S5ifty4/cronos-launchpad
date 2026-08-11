@@ -11,5 +11,14 @@
     "web:dev": "pnpm --filter @cronos-launchpad/web dev",
     "contracts:test": "pnpm --filter @cronos-launchpad/contracts test"
   },
+  "pnpm": {
+    "overrides": {
+      "adm-zip": "^0.6.0",
+      "axios": "^1.19.0",
+      "lodash-es": "^4.18.1",
+      "nanoid": "^5.1.16",
+      "undici": "^6.28.0"
+    }
+  },
   "workspaces": ["apps/*", "packages/*", "contracts"]
 }

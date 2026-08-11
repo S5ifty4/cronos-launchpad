@@ -64,5 +64,10 @@ export function summarizeSimulationProof(proof: { expectedEvents?: string[] }) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  pollLogs(configFromEnv()).then((result) => console.log(JSON.stringify(result, (_, value) => typeof value === 'bigint' ? value.toString() : value, 2)));
+  pollLogs(configFromEnv())
+    .then((result) => console.log(JSON.stringify(result, (_, value) => typeof value === 'bigint' ? value.toString() : value, 2)))
+    .catch((error) => {
+      console.error(error instanceof Error ? error.stack || error.message : JSON.stringify(error, null, 2));
+      process.exitCode = 1;
+    });
 }

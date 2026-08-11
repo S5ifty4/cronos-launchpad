@@ -1,13 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import { assessTokenIdentity, getAntiBotBuyLimit } from '@cronos-launchpad/core';
+import { decodeEventLog, parseAbiItem } from 'viem';
+import { usePublicClient } from 'wagmi';
 import { Badge } from '../components/Badge';
 import { prepareCreateTokenTx } from '../contracts/launchpadClient';
 import { getLaunches } from '../data/api';
 import { uploadTokenImage } from '../data/supabase';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
-import { vvsTestnetContracts } from '../wallet/chains';
+import { vvsTestnetContracts, explorerTxUrl, shortAddress } from '../wallet/chains';
 import { ToggleRow } from '../components/ToggleRow';
 import { SocialLinks } from '../components/SocialLinks';
+
+const tokenCreatedEvent = parseAbiItem('event TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address lpBeneficiary,uint64 lpLockDurationSeconds)');
+
+function tokenCreatedFromLogs(logs: readonly { topics: [] | [`0x${string}`, ...`0x${string}`[]]; data: `0x${string}` }[]) {
+  for (const log of logs) {
+    if (!log.topics.length) continue;
+    try {
+      const topics = [...log.topics] as [`0x${string}`, ...`0x${string}`[]];
+      const event = decodeEventLog({ abi: [tokenCreatedEvent], topics, data: log.data });
+      if (event.eventName === 'TokenCreated') return event.args.token;
+    } catch {
+      // Ignore non-TokenCreated logs in the same receipt.
+    }
+  }
+  return undefined;
+}
 
 export function CreatePage() {
   const [name, setName] = useState('');
@@ -25,8 +43,11 @@ export function CreatePage() {
   const [antiBotEnabled, setAntiBotEnabled] = useState(true);
   const [txHash, setTxHash] = useState<string>();
   const [txError, setTxError] = useState<string>();
+  const [submittedTxKey, setSubmittedTxKey] = useState<string>();
+  const [txStatus, setTxStatus] = useState<'idle' | 'submitted' | 'confirming' | 'confirmed' | 'failed'>('idle');
   const existingIdentities = useMemo(() => getLaunches(), []);
   const wallet = useLaunchpadWallet();
+  const publicClient = usePublicClient({ chainId: wallet.chainId });
   const txPreview = useMemo(() => prepareCreateTokenTx({
     name,
     symbol,
@@ -39,17 +60,49 @@ export function CreatePage() {
   const identity = useMemo(() => assessTokenIdentity({ name, symbol }, existingIdentities), [name, symbol, existingIdentities]);
   const currentLimit = antiBotEnabled ? getAntiBotBuyLimit({ elapsedSeconds: 180, baseLimitCro: 1_000 }) : undefined;
   const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
-  const txReadiness = txPreview.ready ? 'ready to sign' : `waiting: ${txPreview.missing.join(', ')}`;
+  const txKey = useMemo(() => `${txPreview.to ?? ''}:${txPreview.value.toString()}:${txPreview.data}`, [txPreview.to, txPreview.value, txPreview.data]);
+  const submittedThisConfig = Boolean(txHash && submittedTxKey === txKey && txStatus !== 'failed');
+  const txReadiness = submittedThisConfig
+    ? txStatus === 'confirmed'
+      ? 'confirmed — opening token page'
+      : txStatus === 'confirming'
+        ? 'submitted — waiting for Cronos confirmation'
+        : 'submitted — waiting for wallet/network confirmation'
+    : txPreview.ready ? 'ready to sign' : `waiting: ${txPreview.missing.join(', ')}`;
+  const submitDisabled = !txPreview.ready || !wallet.isCorrectChain || wallet.isPending || submittedThisConfig;
+  const submitLabel = submittedThisConfig
+    ? txStatus === 'confirmed'
+      ? 'Launch confirmed'
+      : 'Launch submitted'
+    : wallet.isPending ? 'Submitting…' : 'Submit create tx';
   const previewSocials = [xLink && 'X', websiteLink && 'Website', discordLink && 'Discord', telegramLink && 'Telegram'].filter(Boolean) as string[];
   useEffect(() => () => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
   }, [imagePreviewUrl]);
   const handleSend = async () => {
+    if (submittedThisConfig) return;
     setTxError(undefined);
     try {
       const hash = await wallet.sendTransaction(txPreview);
-      if (hash) setTxHash(hash);
+      if (!hash) return;
+      setTxHash(hash);
+      setSubmittedTxKey(txKey);
+      setTxStatus('submitted');
+      if (!publicClient) return;
+      setTxStatus('confirming');
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status === 'reverted') {
+        setTxStatus('failed');
+        setSubmittedTxKey(undefined);
+        setTxError('Transaction reverted on Cronos. You can adjust the form and try again.');
+        return;
+      }
+      const tokenAddress = tokenCreatedFromLogs(receipt.logs);
+      setTxStatus('confirmed');
+      if (tokenAddress) window.location.assign(`/token/${tokenAddress}`);
     } catch (error) {
+      setTxStatus('failed');
+      setSubmittedTxKey(undefined);
       setTxError(error instanceof Error ? error.message : 'Transaction rejected');
     }
   };
@@ -129,10 +182,11 @@ export function CreatePage() {
             <dt>Tx readiness</dt><dd>{txReadiness}</dd>
             <dt>Calldata</dt><dd>{txPreview.data.slice(0, 18)}…{txPreview.data.slice(-10)}</dd>
           </dl>
-          <button className="button primary" disabled={!txPreview.ready || !wallet.isCorrectChain || wallet.isPending} onClick={handleSend}>{wallet.isPending ? 'Submitting…' : 'Submit create tx'}</button>
+          <button className="button primary" disabled={submitDisabled} onClick={handleSend}>{submitLabel}</button>
           {wallet.error && <p className="small">Wallet: {wallet.error}</p>}
           {txError && <p className="small">Wallet: {txError}</p>}
-          {txHash && <p className="small">Tx hash: {txHash}</p>}
+          {txHash && <p className="small">Tx hash: <a href={explorerTxUrl(txHash, wallet.chainId)} target="_blank" rel="noreferrer">{shortAddress(txHash)} ↗</a></p>}
+          {submittedThisConfig && <p className="small">Do not submit this form again. After confirmation we open the token page; Explore updates once the indexer writes the on-chain event.</p>}
         </div>
       </div>
     </section>

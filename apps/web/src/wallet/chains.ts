@@ -11,10 +11,23 @@ export const cronosTestnet = {
   blockExplorerUrls: ['https://explorer.cronos.org/testnet'],
 } as const;
 
+export const cronosMainnet = {
+  id: 25,
+  name: 'Cronos',
+  nativeCurrency: { name: 'Cronos', symbol: 'CRO', decimals: 18 },
+  rpcUrls: ['https://evm.cronos.org'],
+  blockExplorerUrls: ['https://explorer.cronos.org'],
+} as const;
+
 export function shortAddress(address?: string) {
   return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '';
 }
 
 export function toHexChainId(chainId: number) {
   return `0x${chainId.toString(16)}`;
+}
+
+export function explorerTxUrl(txHash: string, chainId: number = cronosTestnet.id) {
+  const explorerBase = chainId === cronosMainnet.id ? cronosMainnet.blockExplorerUrls[0] : cronosTestnet.blockExplorerUrls[0];
+  return `${explorerBase}/tx/${txHash}`;
 }

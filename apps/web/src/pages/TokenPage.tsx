@@ -5,10 +5,31 @@ import { Metric } from '../components/Metric';
 import { SocialLinks } from '../components/SocialLinks';
 import { TokenGlyph } from '../components/TokenGlyph';
 import { TradePanel } from '../components/TradePanel';
-import { getLaunchByAddress, getLaunchHolders, getLaunchTrades } from '../data/api';
+import { getLaunchByAddress, getLaunchHolders, getLaunchTrades, getLaunches } from '../data/api';
+import { cronosTestnet, shortAddress } from '../wallet/chains';
 
 export function TokenPage({ address }: { address?: string }) {
-  const launch = getLaunchByAddress(address);
+  const knownLaunch = getLaunches().find((launch) => launch.address.toLowerCase() === address?.toLowerCase());
+  const launch = knownLaunch ?? getLaunchByAddress(address);
+
+  if (address && !knownLaunch) {
+    return (
+      <section className="panel tokenDetail">
+        <div className="miniPanel">
+          <p className="eyebrow">Launch confirmed</p>
+          <h2>Indexing token data…</h2>
+          <p className="lede">Your token contract exists on Cronos Testnet, but the Explore/indexed detail data has not been written yet.</p>
+          <div className="queueList">
+            <div><span>Token address</span><b>{shortAddress(address)}</b><em>confirmed</em></div>
+            <div><span>Explore visibility</span><b>Waiting for indexer</b><em>pending</em></div>
+          </div>
+          <p className="small">Keep this page open or check Explore again after the indexer catches up. We show this pending state instead of falling back to sample launch data.</p>
+          <a className="button secondary" href={`${cronosTestnet.blockExplorerUrls[0]}/address/${address}`} target="_blank" rel="noreferrer">View contract on explorer ↗</a>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="panel tokenDetail">
       <div className="tokenMainColumn">

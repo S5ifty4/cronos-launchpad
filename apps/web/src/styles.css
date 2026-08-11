@@ -102,7 +102,10 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .badge-warn { background: rgba(255, 198, 76, .12); color: #ffe29a; border-color: rgba(255,198,76,.24); }
 .badge-bad { background: rgba(255, 76, 113, .14); color: #ff9cb1; border-color: rgba(255,76,113,.26); }
 .badge-blue { background: rgba(76,219,255,.12); color: #bff5ff; border-color: rgba(76,219,255,.26); }
-.small { font-size: 13px; color: var(--dim); }
+.small { font-size: 13px; color: var(--dim); overflow-wrap: anywhere; word-break: break-word; }
+.terminalCard .small { max-width: 100%; white-space: normal; }
+.terminalCard { min-width: 0; }
+.createPreviewStack { min-width: 0; }
 
 .createV2, .tokenDetail, .trustGrid, .opsGrid, .deployPanel { display: grid; grid-template-columns: minmax(0, .95fr) minmax(330px, 1fr); gap: 22px; align-items: stretch; }
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }

@@ -1,6 +1,7 @@
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { defineChain, http } from 'viem';
+import { cronos } from 'wagmi/chains';
 import type { AppKitNetwork } from '@reown/appkit/networks';
 import { cronosTestnet } from './chains';
 
@@ -20,13 +21,14 @@ export const cronosTestnetChain = defineChain({
   testnet: true,
 });
 
-export const reownNetworks = [cronosTestnetChain] as [AppKitNetwork, ...AppKitNetwork[]];
+export const reownNetworks = [cronosTestnetChain, cronos] as [AppKitNetwork, ...AppKitNetwork[]];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks: reownNetworks,
   projectId: walletConnectProjectId,
   transports: {
     [cronosTestnetChain.id]: http(cronosTestnet.rpcUrls[0]),
+    [cronos.id]: http('https://evm.cronos.org'),
   },
 });
 
@@ -53,7 +55,12 @@ export function initializeAppKit() {
       socials: false,
       swaps: false,
       onramp: false,
+      allWallets: true,
     },
+    allWallets: 'SHOW',
+    enableWallets: true,
+    enableInjected: true,
+    enableWalletConnect: true,
     themeMode: 'dark',
     themeVariables: {
       '--w3m-accent': '#ff7a1a',

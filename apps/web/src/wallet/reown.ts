@@ -5,7 +5,8 @@ import { cronos } from 'wagmi/chains';
 import type { AppKitNetwork } from '@reown/appkit/networks';
 import { cronosTestnet } from './chains';
 
-export const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'dev-placeholder-replace-me';
+const rawWalletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+export const walletConnectProjectId = rawWalletConnectProjectId?.trim() || 'dev-placeholder-replace-me';
 
 export const cronosTestnetChain = defineChain({
   id: cronosTestnet.id,

@@ -99,7 +99,7 @@ describe('launch metadata handler', () => {
     await handler({ method: 'POST', body: validBody }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(stored?.token_address, validBody.tokenAddress);
-    assert.equal(stored?.website_url, null);
+    assert.equal(stored?.website_url, 'https://www.google.com/');
     assert.equal(stored?.x_url, null);
     assert.equal(stored?.image_url, 'https://example.com/image.png');
   });

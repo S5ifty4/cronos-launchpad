@@ -7,7 +7,7 @@ import { prepareCreateTokenTx } from './contracts/launchpadClient';
 import { envAddress } from './contracts/addresses';
 import { cronosMainnet, cronosTestnet, explorerTxUrl, vvsTestnetContracts } from './wallet/chains';
 import { cronosTestnetChain, walletConnectProjectId } from './wallet/reown';
-import { normalizeSocialPlatform } from './components/SocialLinks';
+import { normalizeSocialPlatform, normalizeSocialUrl } from './components/SocialLinks';
 import { filterLaunches } from './data/exploreFilters';
 
 describe('launchpad web model', () => {
@@ -44,6 +44,22 @@ describe('launchpad web model', () => {
     expect(invalidNumber.missing).toContain('graduation target');
   });
 
+  it('blocks duplicate token identity before wallet submission', () => {
+    const duplicate = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK' }, getLaunches());
+    const tx = prepareCreateTokenTx({
+      name: 'Crojack Protocol',
+      symbol: 'CROJACK',
+      graduationTargetCro: '65000',
+      initialBuyCro: '1',
+      antiBotEnabled: true,
+      vvsRouter: vvsTestnetContracts.smartRouter,
+      lpBeneficiary: '0x7dec46c3792e749a804d8923d74bdf59364cad9d',
+    });
+    expect(tx.ready).toBe(true);
+    expect(duplicate.status).toBe('blocked');
+    expect(duplicate.reasons).toEqual(expect.arrayContaining(['DUPLICATE_NAME', 'DUPLICATE_SYMBOL']));
+  });
+
   it('trims env-loaded contract addresses', () => {
     expect(envAddress('0xb39452a805657c6aaef5d804934d44c814f35906\n')).toBe('0xb39452a805657c6aaef5d804934d44c814f35906');
     expect(envAddress('')).toBeUndefined();
@@ -74,6 +90,12 @@ describe('launchpad web model', () => {
     expect(normalizeSocialPlatform('Web')).toBe('website');
     expect(normalizeSocialPlatform('Discord')).toBe('discord');
     expect(normalizeSocialPlatform('Telegram')).toBe('telegram');
+  });
+
+  it('normalizes user-entered social URLs before preview and metadata persistence', () => {
+    expect(normalizeSocialUrl('cronosforge.com')).toBe('https://cronosforge.com/');
+    expect(normalizeSocialUrl(' https://x.com/cronos_chain ')).toBe('https://x.com/cronos_chain');
+    expect(normalizeSocialUrl('not a url')).toBe('');
   });
 
   it('filters launch board results by tab and search query', () => {

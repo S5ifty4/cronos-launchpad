@@ -9,7 +9,7 @@ import { uploadTokenImage } from '../data/supabase';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 import { vvsTestnetContracts, explorerTxUrl, shortAddress } from '../wallet/chains';
 import { ToggleRow } from '../components/ToggleRow';
-import { SocialLinks } from '../components/SocialLinks';
+import { normalizeSocialUrl, SocialLinks } from '../components/SocialLinks';
 
 const tokenCreatedEvent = parseAbiItem('event TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address lpBeneficiary,uint64 lpLockDurationSeconds)');
 
@@ -34,6 +34,10 @@ async function finalizeLaunchMetadata(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`Metadata save failed (${response.status})`);
+}
+
+function socialUrl(value: string) {
+  return normalizeSocialUrl(value) || undefined;
 }
 
 export function CreatePage() {
@@ -72,30 +76,36 @@ export function CreatePage() {
   const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
   const txKey = useMemo(() => `${txPreview.to ?? ''}:${txPreview.value.toString()}:${txPreview.data}`, [txPreview.to, txPreview.value, txPreview.data]);
   const submittedThisConfig = Boolean(txHash && submittedTxKey === txKey && txStatus !== 'failed');
+  const duplicateBlocked = identity.status === 'blocked';
+  const readinessMissing = [...txPreview.missing, ...(duplicateBlocked ? identity.reasons : [])];
   const txReadiness = submittedThisConfig
     ? txStatus === 'confirmed'
       ? 'confirmed — opening token page'
       : txStatus === 'confirming'
         ? 'submitted — waiting for Cronos confirmation'
         : 'submitted — waiting for wallet/network confirmation'
-    : txPreview.ready ? 'ready to sign' : `waiting: ${txPreview.missing.join(', ')}`;
-  const submitDisabled = !txPreview.ready || !wallet.isCorrectChain || wallet.isPending || submittedThisConfig;
+    : txPreview.ready && !duplicateBlocked ? 'ready to sign' : `waiting: ${readinessMissing.join(', ')}`;
+  const submitDisabled = !txPreview.ready || duplicateBlocked || !wallet.isCorrectChain || wallet.isPending || submittedThisConfig;
   const submitLabel = submittedThisConfig
     ? txStatus === 'confirmed'
       ? 'Launch confirmed'
       : 'Launch submitted'
     : wallet.isPending ? 'Submitting…' : 'Submit create tx';
   const previewSocials = [
-    websiteLink && { platform: 'website' as const, url: websiteLink },
-    xLink && { platform: 'x' as const, url: xLink },
-    discordLink && { platform: 'discord' as const, url: discordLink },
-    telegramLink && { platform: 'telegram' as const, url: telegramLink },
-  ].filter(Boolean);
+    socialUrl(websiteLink) && { platform: 'website' as const, url: socialUrl(websiteLink)! },
+    socialUrl(xLink) && { platform: 'x' as const, url: socialUrl(xLink)! },
+    socialUrl(discordLink) && { platform: 'discord' as const, url: socialUrl(discordLink)! },
+    socialUrl(telegramLink) && { platform: 'telegram' as const, url: socialUrl(telegramLink)! },
+  ].filter((link): link is { platform: 'website' | 'x' | 'discord' | 'telegram'; url: string } => Boolean(link));
   useEffect(() => () => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
   }, [imagePreviewUrl]);
   const handleSend = async () => {
     if (submittedThisConfig) return;
+    if (duplicateBlocked) {
+      setTxError(`Preflight blocked this launch: ${identity.reasons.join(', ')}`);
+      return;
+    }
     setTxError(undefined);
     try {
       const hash = await wallet.sendTransaction(txPreview);
@@ -123,10 +133,10 @@ export function CreatePage() {
           symbol: symbol.trim().toUpperCase(),
           description,
           imageUrl: imagePublicUrl,
-          websiteUrl: websiteLink,
-          xUrl: xLink,
-          discordUrl: discordLink,
-          telegramUrl: telegramLink,
+          websiteUrl: socialUrl(websiteLink),
+          xUrl: socialUrl(xLink),
+          discordUrl: socialUrl(discordLink),
+          telegramUrl: socialUrl(telegramLink),
           graduationTargetWei: txPreview.args[5].toString(),
           reserveRaisedWei: txPreview.value.toString(),
           antiBotEnabled,

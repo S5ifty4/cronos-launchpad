@@ -50,7 +50,7 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .lede { font-size: clamp(18px, 2vw, 22px); line-height: 1.5; max-width: 760px; margin: 0 0 28px; }
 .eyebrow { color: var(--cronos-blue); text-transform: uppercase; letter-spacing: .18em; font-size: 12px; font-weight: 900; }
 .heroActions, .tabs, .badges, .socials, .amountChips { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 14px 20px; border-radius: 999px; text-decoration: none; font-weight: 900; border: 0; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 14px 20px; border-radius: 999px; text-decoration: none; font-weight: 900; border: 0; cursor: pointer; }
 .button:disabled { cursor: not-allowed; opacity: .48; filter: saturate(.55); box-shadow: none; }
 .primary { background: var(--cronos-blue); color: #001116; box-shadow: 0 0 34px rgba(76,219,255,.28); }
 .secondary { border: 1px solid var(--line); color: var(--white); background: rgba(255,255,255,.04); }
@@ -80,6 +80,7 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .filterTab.active .badge { box-shadow: 0 0 24px rgba(76,219,255,.18); }
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .launchCard { min-height: 310px; display: flex; flex-direction: column; background: rgba(0,0,0,.26); border: 1px solid rgba(255,255,255,.105); border-radius: 24px; padding: 18px; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.previewCard { min-height: auto; }
 .clickableCard { cursor: pointer; }
 .clickableCard:focus-visible { outline: 2px solid var(--cronos-blue); outline-offset: 4px; }
 .launchCard:hover { transform: translateY(-2px); border-color: rgba(76,219,255,.34); background: rgba(76,219,255,.055); }
@@ -92,8 +93,10 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .cardTop { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
 .cardTop h3 { font-size: 20px; } .cardTop span, .tokenHeader h2 span { color: var(--cronos-blue); font-weight: 950; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
 .description { min-height: 54px; margin: 0 0 10px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.socials { margin: 10px 0 12px; }
+.tokenHeader .socials { margin-top: 14px; }
 .socials .socialIcon, .amountChips span { border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: 6px; font-size: 11px; font-weight: 900; }
-.socialIcon { width: 34px; height: 34px; display: inline-grid; place-items: center; background: rgba(255,255,255,.035); text-decoration: none; }
+.socialIcon { width: 34px; height: 34px; display: inline-grid; place-items: center; background: rgba(255,255,255,.035); text-decoration: none; cursor: pointer; }
 .socialIcon:hover { color: var(--white); border-color: rgba(76,219,255,.45); background: rgba(76,219,255,.08); }
 .socialGlyph { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .socialGlyphText { display: grid; place-items: center; font-size: 15px; line-height: 1; stroke: none; }

@@ -53,6 +53,14 @@ function cleanUrl(value?: string | null) {
     const url = new URL(trimmed);
     return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
   } catch {
+    if (/^[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(trimmed)) {
+      try {
+        const url = new URL(`https://${trimmed}`);
+        return url.toString();
+      } catch {
+        return null;
+      }
+    }
     return null;
   }
 }

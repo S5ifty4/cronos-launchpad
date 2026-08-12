@@ -25,13 +25,27 @@ function fallbackUrl(platform: SocialPlatform) {
   return 'https://t.me/cronos_official';
 }
 
-function normalizeSocial(value: string | SocialLink): SocialLink {
+export function normalizeSocialUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    if (/^[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(trimmed)) {
+      try { return new URL(`https://${trimmed}`).toString(); } catch { return ''; }
+    }
+    return '';
+  }
+}
+
+export function normalizeSocial(value: string | SocialLink): SocialLink | null {
   if (typeof value === 'string') {
     const platform = normalizeSocialPlatform(value);
     return { platform, url: fallbackUrl(platform) };
   }
   const platform = normalizeSocialPlatform(value.platform);
-  return { platform, url: value.url || fallbackUrl(platform) };
+  const url = normalizeSocialUrl(value.url);
+  return url ? { platform, url } : null;
 }
 
 function SocialIcon({ platform }: { platform: SocialPlatform }) {
@@ -61,7 +75,9 @@ function SocialIcon({ platform }: { platform: SocialPlatform }) {
 
 export function SocialLinks({ socials }: { socials: (string | SocialLink)[] }) {
   const byPlatform = new Map<SocialPlatform, SocialLink>();
-  socials.filter(Boolean).map(normalizeSocial).forEach((link) => byPlatform.set(link.platform, link));
+  socials.filter(Boolean).map(normalizeSocial).forEach((link) => {
+    if (link) byPlatform.set(link.platform, link);
+  });
   const links = platformOrder.map((platform) => byPlatform.get(platform)).filter(Boolean) as SocialLink[];
   if (!links.length) return null;
   return (

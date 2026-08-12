@@ -1,5 +1,5 @@
 import { creatorProfile, holders, launches, proofPackage, trades } from './mock';
-import { fetchSupabaseLaunchByAddress, fetchSupabaseLaunches } from './supabase';
+import { fetchSupabaseHolderSnapshots, fetchSupabaseLaunchByAddress, fetchSupabaseLaunches, fetchSupabaseLaunchTrades } from './supabase';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
@@ -50,12 +50,16 @@ export async function fetchLaunchByAddress(address: string) {
   return fetchOrFallback(`/launches/${address}`, getLaunchByAddress(address));
 }
 
-export function fetchLaunchTrades(address: string) {
+export async function fetchLaunchTrades(address: string) {
+  const supabaseTrades = await fetchSupabaseLaunchTrades(address);
+  if (supabaseTrades) return supabaseTrades;
   return fetchOrFallback(`/launches/${address}/trades`, trades);
 }
 
-export function fetchLaunchHolders(address: string) {
-  return fetchOrFallback(`/launches/${address}/holders`, holders);
+export async function fetchLaunchHolders(address: string) {
+  const supabaseHolders = await fetchSupabaseHolderSnapshots(address);
+  if (supabaseHolders) return supabaseHolders;
+  return fetchOrFallback(`/launches/${address}/holders`, []);
 }
 
 export function fetchCreatorProfile(wallet: string) {

@@ -19,8 +19,15 @@ export const launchpadFactoryAbi = [
     ],
     outputs: [{ name: 'token', type: 'address' }],
   },
+  {
+    type: 'function',
+    name: 'buy',
+    stateMutability: 'payable',
+    inputs: [{ name: 'token', type: 'address' }],
+    outputs: [],
+  },
   { type: 'event', name: 'TokenCreated', inputs: [{ name: 'token', type: 'address', indexed: true }, { name: 'creator', type: 'address', indexed: true }] },
-  { type: 'event', name: 'TokenBought', inputs: [{ name: 'token', type: 'address', indexed: true }, { name: 'buyer', type: 'address', indexed: true }, { name: 'croIn', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'TokenBought', inputs: [{ name: 'token', type: 'address', indexed: true }, { name: 'buyer', type: 'address', indexed: true }, { name: 'croIn', type: 'uint256', indexed: false }, { name: 'reserveRaisedWei', type: 'uint256', indexed: false }] },
   { type: 'event', name: 'TokenGraduated', inputs: [{ name: 'token', type: 'address', indexed: true }, { name: 'pair', type: 'address', indexed: false }, { name: 'lpVault', type: 'address', indexed: false }] },
 ] as const;
 

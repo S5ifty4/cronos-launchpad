@@ -72,3 +72,22 @@ export function prepareCreateTokenTx(form: CreateTokenForm) {
     missing,
   };
 }
+
+export function prepareBuyContributionTx({ tokenAddress, amountCro }: { tokenAddress?: string; amountCro: string }) {
+  const to = addresses.cronosTestnet.launchpadFactory;
+  const normalizedAmount = normalizeNumber(amountCro);
+  const validAmount = isPositiveNumber(amountCro);
+  const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
+  const missing = [
+    !to && 'VITE_CRONOS_TESTNET_FACTORY',
+    !validToken && 'token address',
+    !validAmount && 'CRO amount',
+  ].filter(Boolean) as string[];
+  return {
+    to,
+    value: parseEther(validAmount ? normalizedAmount : '0'),
+    data: encodeFunctionData({ abi: launchpadFactoryAbi, functionName: 'buy', args: [validToken ? tokenAddress as `0x${string}` : zeroAddress] }),
+    ready: missing.length === 0,
+    missing,
+  };
+}

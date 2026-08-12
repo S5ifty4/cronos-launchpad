@@ -3,7 +3,7 @@ import { assessTokenIdentity } from '@cronos-launchpad/core';
 import { toFunctionSelector } from 'viem';
 import { launchpadFactoryAbi } from './contracts/abis';
 import { getLaunches } from './data/api';
-import { prepareCreateTokenTx } from './contracts/launchpadClient';
+import { prepareBuyContributionTx, prepareCreateTokenTx } from './contracts/launchpadClient';
 import { envAddress } from './contracts/addresses';
 import { cronosMainnet, cronosTestnet, explorerTxUrl, vvsTestnetContracts } from './wallet/chains';
 import { cronosTestnetChain, walletConnectProjectId } from './wallet/reown';
@@ -33,6 +33,15 @@ describe('launchpad web model', () => {
     expect(createToken).toBeTruthy();
     expect(toFunctionSelector(createToken!)).toBe('0xd928a6db');
     expect(createToken!.inputs.at(-1)?.type).toBe('uint64');
+  });
+
+  it('prepares real buy contribution calldata for the launch factory', () => {
+    const buy = launchpadFactoryAbi.find((entry) => entry.type === 'function' && entry.name === 'buy');
+    expect(buy).toBeTruthy();
+    expect(toFunctionSelector(buy!)).toBe('0xf088d547');
+    const tx = prepareBuyContributionTx({ tokenAddress: '0x353b2c04d642ece09815778628e35c79d2d5ad22', amountCro: '5' });
+    expect(tx.data.startsWith('0xf088d547')).toBe(true);
+    expect(tx.value).toBe(5000000000000000000n);
   });
 
   it('keeps create-token tx disabled until required transaction fields are valid', () => {

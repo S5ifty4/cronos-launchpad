@@ -26,7 +26,7 @@ export type Launch = {
   imageUrl?: string;
 };
 
-export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string };
+export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string; txHash?: string; blockNumber?: number; timestamp?: string; croAmountWei?: string };
 export type HolderSnapshot = { wallet: string; share: string; note: string };
 export type CreatorProfile = { wallet: string; launches: string; graduated: string; reports: string; totalVolume: string; socials: SocialLink[] };
 export type ProofPackage = { label: string; value: string; status: 'ready' | 'pending' }[];

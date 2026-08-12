@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Launch, LaunchStatus, SocialLink } from './types';
+import type { HolderSnapshot, Launch, LaunchStatus, SocialLink, Trade } from './types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -26,6 +26,25 @@ type LaunchRow = {
   anti_bot_enabled: boolean;
   tax_bips: number;
   created_at: string;
+};
+
+type TradeRow = {
+  trader_address: string;
+  side: string;
+  cro_amount_wei: string | number;
+  token_amount: string | number | null;
+  tx_hash: string;
+  block_number: string | number;
+  traded_at: string;
+};
+
+type HolderRow = {
+  holder_address: string;
+  balance: string | number;
+  share_bips: number;
+  label: string | null;
+  snapshot_block: string | number;
+  captured_at: string;
 };
 
 function formatCro(value: string | number) {
@@ -108,6 +127,50 @@ export async function fetchSupabaseLaunchByAddress(address: string) {
     .maybeSingle();
   if (error || !data) return null;
   return mapLaunchRow(data as LaunchRow);
+}
+
+export async function fetchSupabaseLaunchTrades(address: string): Promise<Trade[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('trades')
+    .select('trader_address,side,cro_amount_wei,token_amount,tx_hash,block_number,traded_at')
+    .eq('token_address', address.toLowerCase())
+    .order('block_number', { ascending: false })
+    .limit(25);
+  if (error || !data) return null;
+  return data.map((row) => {
+    const trade = row as TradeRow;
+    return {
+      side: trade.side.toLowerCase() === 'sell' ? 'Sell' : 'Buy',
+      wallet: trade.trader_address,
+      amount: formatCro(trade.cro_amount_wei),
+      tokens: trade.token_amount ? `${Number(trade.token_amount).toLocaleString()} tokens` : 'reserve contribution',
+      age: age(trade.traded_at),
+      txHash: trade.tx_hash,
+      blockNumber: Number(trade.block_number),
+      timestamp: trade.traded_at,
+      croAmountWei: String(trade.cro_amount_wei),
+    };
+  });
+}
+
+export async function fetchSupabaseHolderSnapshots(address: string): Promise<HolderSnapshot[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('holder_snapshots')
+    .select('holder_address,balance,share_bips,label,snapshot_block,captured_at')
+    .eq('token_address', address.toLowerCase())
+    .order('share_bips', { ascending: false })
+    .limit(25);
+  if (error || !data) return null;
+  return data.map((row) => {
+    const holder = row as HolderRow;
+    return {
+      wallet: holder.holder_address,
+      share: `${(holder.share_bips / 100).toFixed(2)}%`,
+      note: holder.label ?? `${Number(holder.balance).toLocaleString()} tokens`,
+    };
+  });
 }
 
 export async function uploadTokenImage(file: File) {

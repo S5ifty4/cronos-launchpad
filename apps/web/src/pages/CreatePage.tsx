@@ -4,7 +4,7 @@ import { decodeEventLog, parseAbiItem } from 'viem';
 import { usePublicClient } from 'wagmi';
 import { Badge } from '../components/Badge';
 import { prepareCreateTokenTx } from '../contracts/launchpadClient';
-import { getLaunches } from '../data/api';
+import { fetchLaunches, getLaunches } from '../data/api';
 import { uploadTokenImage } from '../data/supabase';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 import { vvsTestnetContracts, explorerTxUrl, shortAddress } from '../wallet/chains';
@@ -59,7 +59,8 @@ export function CreatePage() {
   const [txError, setTxError] = useState<string>();
   const [submittedTxKey, setSubmittedTxKey] = useState<string>();
   const [txStatus, setTxStatus] = useState<'idle' | 'submitted' | 'confirming' | 'confirmed' | 'failed'>('idle');
-  const existingIdentities = useMemo(() => getLaunches(), []);
+  const [existingIdentities, setExistingIdentities] = useState(getLaunches());
+  const [identityLoading, setIdentityLoading] = useState(true);
   const wallet = useLaunchpadWallet();
   const publicClient = usePublicClient({ chainId: wallet.chainId });
   const txPreview = useMemo(() => prepareCreateTokenTx({
@@ -77,15 +78,15 @@ export function CreatePage() {
   const txKey = useMemo(() => `${txPreview.to ?? ''}:${txPreview.value.toString()}:${txPreview.data}`, [txPreview.to, txPreview.value, txPreview.data]);
   const submittedThisConfig = Boolean(txHash && submittedTxKey === txKey && txStatus !== 'failed');
   const duplicateBlocked = identity.status === 'blocked';
-  const readinessMissing = [...txPreview.missing, ...(duplicateBlocked ? identity.reasons : [])];
+  const readinessMissing = [...txPreview.missing, ...(identityLoading ? ['live duplicate preflight'] : []), ...(duplicateBlocked ? identity.reasons : [])];
   const txReadiness = submittedThisConfig
     ? txStatus === 'confirmed'
       ? 'confirmed — opening token page'
       : txStatus === 'confirming'
         ? 'submitted — waiting for Cronos confirmation'
         : 'submitted — waiting for wallet/network confirmation'
-    : txPreview.ready && !duplicateBlocked ? 'ready to sign' : `waiting: ${readinessMissing.join(', ')}`;
-  const submitDisabled = !txPreview.ready || duplicateBlocked || !wallet.isCorrectChain || wallet.isPending || submittedThisConfig;
+    : txPreview.ready && !identityLoading && !duplicateBlocked ? 'ready to sign' : `waiting: ${readinessMissing.join(', ')}`;
+  const submitDisabled = !txPreview.ready || identityLoading || duplicateBlocked || !wallet.isCorrectChain || wallet.isPending || submittedThisConfig;
   const submitLabel = submittedThisConfig
     ? txStatus === 'confirmed'
       ? 'Launch confirmed'
@@ -100,14 +101,48 @@ export function CreatePage() {
   useEffect(() => () => {
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
   }, [imagePreviewUrl]);
+  useEffect(() => {
+    let cancelled = false;
+    setIdentityLoading(true);
+    fetchLaunches()
+      .then((launches) => {
+        if (!cancelled) setExistingIdentities(launches);
+      })
+      .catch(() => {
+        if (!cancelled) setTxError('Live duplicate preflight could not refresh; using bundled fallback list.');
+      })
+      .finally(() => {
+        if (!cancelled) setIdentityLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
   const handleSend = async () => {
     if (submittedThisConfig) return;
+    if (identityLoading) {
+      setTxError('Still refreshing live duplicate preflight. Please wait a moment before signing.');
+      return;
+    }
     if (duplicateBlocked) {
       setTxError(`Preflight blocked this launch: ${identity.reasons.join(', ')}`);
       return;
     }
     setTxError(undefined);
     try {
+      if (!publicClient || !txPreview.to) {
+        setTxError('Live chain preflight is not ready yet. Please wait and try again.');
+        return;
+      }
+      try {
+        await publicClient.call({
+          account: wallet.address as `0x${string}` | undefined,
+          to: txPreview.to,
+          data: txPreview.data,
+          value: txPreview.value,
+        });
+      } catch (error) {
+        setTxError(`Live chain preflight blocked this launch before wallet signing: ${error instanceof Error ? error.message : 'transaction would revert'}`);
+        return;
+      }
       const hash = await wallet.sendTransaction(txPreview);
       if (!hash) return;
       setTxHash(hash);

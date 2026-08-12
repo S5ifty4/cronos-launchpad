@@ -4,7 +4,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const cronosTestnetRpcUrl = (process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/').trim();
 const expectedFactoryAddress = (process.env.CRONOS_TESTNET_FACTORY_ADDRESS ?? '0xb39452a805657c6aaef5d804934d44c814f35906').trim().toLowerCase();
-const tokenCreatedTopic = '0x9011bc3f0b64dfe8696c2a1987d2fad8d1a965a3317b018e3fa2be21a3ccd011';
+const tokenCreatedTopic = '0x0a2b06d9ce955b36fbce175a41c3259e0b07266d9b8cb105442602d0b50d2049';
 
 const addressPattern = /^0x[a-fA-F0-9]{40}$/;
 const txPattern = /^0x[a-fA-F0-9]{64}$/;

@@ -11,7 +11,7 @@ import { TokenPage } from './pages/TokenPage';
 function route(pathname: string) {
   if (pathname === '/create') return <CreatePage />;
   if (pathname.startsWith('/token/')) return <TokenPage address={pathname.split('/').at(-1)} />;
-  if (pathname.startsWith('/creator/')) return <CreatorPage />;
+  if (pathname === '/creator' || pathname.startsWith('/creator/')) return <CreatorPage />;
   if (pathname === '/admin') return <AdminPage />;
   if (pathname === '/proof') return <ProofPage />;
   if (pathname === '/docs/risks') return <DocsPage topic="risks" />;

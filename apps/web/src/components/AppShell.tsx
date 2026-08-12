@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { WalletStatus } from './WalletStatus';
 
-const nav = [['Explore', '/'], ['Create', '/create'], ['Creator', '/creator/0x6819'], ['Admin', '/admin'], ['Proof', '/proof'], ['Docs', '/docs/how-it-works']];
+const nav = [['Explore', '/'], ['Create', '/create'], ['Creator', '/creator'], ['Admin', '/admin'], ['Proof', '/proof'], ['Docs', '/docs/how-it-works']];
 const legal = [['Terms', '/terms'], ['Privacy', '/privacy'], ['Risk disclaimer', '/risk-disclaimer']];
 
 export function AppShell({ children }: { children: ReactNode }) {

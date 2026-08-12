@@ -2,9 +2,14 @@ declare const process: { env: Record<string, string | undefined> };
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const cronosTestnetRpcUrl = (process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/').trim();
+const expectedFactoryAddress = (process.env.CRONOS_TESTNET_FACTORY_ADDRESS ?? '0xb39452a805657c6aaef5d804934d44c814f35906').trim().toLowerCase();
+const tokenCreatedTopic = '0x9011bc3f0b64dfe8696c2a1987d2fad8d1a965a3317b018e3fa2be21a3ccd011';
 
 const addressPattern = /^0x[a-fA-F0-9]{40}$/;
 const txPattern = /^0x[a-fA-F0-9]{64}$/;
+const uintStringPattern = /^\d+$/;
+const maxOptionalUrlLength = 500;
 
 type LaunchMetadataBody = {
   tokenAddress?: string;
@@ -26,6 +31,11 @@ type LaunchMetadataBody = {
   blockNumber?: string;
 };
 
+type RpcLog = { address: string; topics: string[]; data: string };
+type RpcReceipt = { status?: string; to?: string | null; from?: string; blockNumber?: string; logs?: RpcLog[] };
+type RpcTransaction = { from?: string; to?: string | null; value?: string; input?: string };
+type RpcResult<T> = { result?: T; error?: { message?: string } };
+type VerificationResult = { ok: true } | { ok: false; status: number; error: string };
 type VercelRequest = { method?: string; body?: LaunchMetadataBody | string };
 type VercelResponse = { status: (code: number) => VercelResponse; json: (body: unknown) => void; setHeader: (key: string, value: string) => void; end: () => void };
 
@@ -38,7 +48,7 @@ function send(res: VercelResponse, status: number, body: unknown) {
 
 function cleanUrl(value?: string | null) {
   const trimmed = typeof value === 'string' ? value.trim() : '';
-  if (!trimmed) return null;
+  if (!trimmed || trimmed.length > maxOptionalUrlLength) return null;
   try {
     const url = new URL(trimmed);
     return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
@@ -59,6 +69,80 @@ function parseBody(raw: VercelRequest['body']): LaunchMetadataBody | null {
   return raw;
 }
 
+function parseRequiredUint(value: unknown) {
+  const normalized = normalizeText(value, 80);
+  if (!uintStringPattern.test(normalized)) return null;
+  try { return BigInt(normalized); } catch { return null; }
+}
+
+function hexToBigInt(value?: string) {
+  if (!value?.startsWith('0x')) return null;
+  try { return BigInt(value); } catch { return null; }
+}
+
+function topicAddress(topic?: string) {
+  if (!topic || !/^0x[a-fA-F0-9]{64}$/.test(topic)) return null;
+  return `0x${topic.slice(-40)}`.toLowerCase();
+}
+
+function findTokenCreatedLog(receipt: RpcReceipt, tokenAddress: string, creatorAddress: string) {
+  return (receipt.logs ?? []).find((log) => {
+    const topics = log.topics ?? [];
+    return topics[0]?.toLowerCase() === tokenCreatedTopic &&
+      topicAddress(topics[1]) === tokenAddress &&
+      topicAddress(topics[2]) === creatorAddress;
+  });
+}
+
+async function rpc<T>(method: string, params: unknown[]): Promise<T | null> {
+  const response = await fetch(cronosTestnetRpcUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+  });
+  if (!response.ok) throw new Error(`rpc_http_${response.status}`);
+  const payload = await response.json() as RpcResult<T>;
+  if (payload.error) throw new Error(payload.error.message ?? 'rpc_error');
+  return payload.result ?? null;
+}
+
+async function verifyConfirmedCreateTx(body: {
+  tokenAddress: string;
+  creatorAddress: string;
+  txHash: string;
+  vvsRouter: string;
+  blockNumber: bigint;
+  reserveRaisedWei: bigint;
+}): Promise<VerificationResult> {
+  const [receipt, tx] = await Promise.all([
+    rpc<RpcReceipt>('eth_getTransactionReceipt', [body.txHash]),
+    rpc<RpcTransaction>('eth_getTransactionByHash', [body.txHash]),
+  ]);
+  if (!receipt || !tx) return { ok: false, status: 409, error: 'tx_not_found' };
+  if (receipt.status !== '0x1') return { ok: false, status: 409, error: 'tx_not_successful' };
+  if (receipt.to?.toLowerCase() !== expectedFactoryAddress || tx.to?.toLowerCase() !== expectedFactoryAddress) {
+    return { ok: false, status: 400, error: 'unexpected_factory' };
+  }
+  if (receipt.from?.toLowerCase() !== body.creatorAddress || tx.from?.toLowerCase() !== body.creatorAddress) {
+    return { ok: false, status: 400, error: 'creator_mismatch' };
+  }
+  const actualBlockNumber = hexToBigInt(receipt.blockNumber);
+  if (!actualBlockNumber || actualBlockNumber !== body.blockNumber) {
+    return { ok: false, status: 400, error: 'block_number_mismatch' };
+  }
+  const actualValue = hexToBigInt(tx.value);
+  if (actualValue === null || actualValue !== body.reserveRaisedWei) {
+    return { ok: false, status: 400, error: 'reserve_value_mismatch' };
+  }
+  const eventLog = findTokenCreatedLog(receipt, body.tokenAddress, body.creatorAddress);
+  if (!eventLog) return { ok: false, status: 400, error: 'token_created_event_not_found' };
+  const lowerData = eventLog.data.toLowerCase();
+  if (!lowerData.includes(body.vvsRouter.slice(2).toLowerCase().padStart(64, '0'))) {
+    return { ok: false, status: 400, error: 'vvs_router_mismatch' };
+  }
+  return { ok: true };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.setHeader('access-control-allow-origin', '*');
@@ -69,6 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
   if (!supabaseUrl || !serviceKey) return send(res, 500, { error: 'supabase_not_configured' });
+  if (!addressPattern.test(expectedFactoryAddress)) return send(res, 500, { error: 'factory_not_configured' });
 
   const body = parseBody(req.body);
   if (!body) return send(res, 400, { error: 'invalid_json' });
@@ -80,16 +165,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const name = normalizeText(body.name, 80);
   const symbol = normalizeText(body.symbol, 24).toUpperCase();
   const chainId = Number(body.chainId);
-  const blockNumber = BigInt(body.blockNumber ?? '0');
-  const graduationTargetWei = BigInt(body.graduationTargetWei ?? '0');
-  const reserveRaisedWei = BigInt(body.reserveRaisedWei ?? '0');
+  const blockNumber = parseRequiredUint(body.blockNumber);
+  const graduationTargetWei = parseRequiredUint(body.graduationTargetWei);
+  const reserveRaisedWei = parseRequiredUint(body.reserveRaisedWei);
 
   if (!addressPattern.test(tokenAddress) || !addressPattern.test(creatorAddress) || !addressPattern.test(vvsRouter)) {
     return send(res, 400, { error: 'invalid_address' });
   }
   if (!txPattern.test(txHash)) return send(res, 400, { error: 'invalid_tx_hash' });
-  if (!name || !symbol || !Number.isInteger(chainId) || chainId <= 0 || blockNumber <= 0n || graduationTargetWei <= 0n) {
+  if (!name || !symbol || !Number.isInteger(chainId) || chainId !== 338 || !blockNumber || !graduationTargetWei || reserveRaisedWei === null || blockNumber <= 0n || graduationTargetWei <= 0n || reserveRaisedWei < 0n) {
     return send(res, 400, { error: 'missing_required_launch_fields' });
+  }
+
+  try {
+    const verification = await verifyConfirmedCreateTx({ tokenAddress, creatorAddress, txHash, vvsRouter, blockNumber, reserveRaisedWei });
+    if (!verification.ok) return send(res, verification.status, { error: verification.error });
+  } catch (error) {
+    return send(res, 502, { error: 'rpc_verification_failed', message: error instanceof Error ? error.message : 'unknown_rpc_error' });
   }
 
   const row = {

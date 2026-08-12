@@ -187,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const verification = await verifyConfirmedCreateTx({ tokenAddress, creatorAddress, txHash, vvsRouter, blockNumber, reserveRaisedWei });
-    if (!verification.ok) return send(res, verification.status, { error: verification.error });
+    if (verification.ok === false) return send(res, verification.status, { error: verification.error });
   } catch (error) {
     return send(res, 502, { error: 'rpc_verification_failed', message: error instanceof Error ? error.message : 'unknown_rpc_error' });
   }

@@ -42,9 +42,9 @@ export function HomePage() {
         </div>
         <aside className="heroBoard" aria-label="Launchpad summary">
           <div className="heroLogoLockup"><img src="/assets/cronosforge-logo-inverted.png" alt="CronosForge rocket launch logo" /><span>CronosForge</span></div>
-          <div className="tickerTape"><span>Cronos Testnet active</span><span>Mainnet disabled until configured</span><span>Manual graduation for MVP</span></div>
+          <div className="tickerTape"><span>Cronos Testnet</span><span>Mainnet coming soon</span><span>Manual graduation</span></div>
           <div className="statsGrid"><Metric label="indexed launches" value={loading ? '…' : String(launches.length)} /><Metric label="top progress" value={`${leadingProgress}%`} /><Metric label="LP lock default" value="180d" /></div>
-          <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Duplicate normalized names and symbols blocked on-chain.</li><li>CRO, Cronos, VVS, Crypto.com, Tectonic, and Fulcrom reserved.</li><li>Graduation is a creator/admin transaction before automated keepers are enabled.</li></ul></div>
+          <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Protected token identity with on-chain duplicate and reserved-name checks.</li><li>Launches stay testnet-only until mainnet contracts are configured.</li><li>Graduation is a creator/admin transaction before automated keepers are enabled.</li></ul></div>
         </aside>
       </section>
 

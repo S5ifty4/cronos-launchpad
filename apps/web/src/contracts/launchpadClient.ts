@@ -116,15 +116,20 @@ export async function fetchOnchainBuyEvents(tokenAddress: string, fromBlock = 0n
   const factory = addresses.cronosTestnet.launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];
   const latest = await rpcClient.getBlockNumber();
-  const window = 250000n;
-  const from = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
-  const logs = await rpcClient.getLogs({
-    address: factory,
-    event: launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === 'TokenBought') as Extract<(typeof launchpadFactoryAbi)[number], { type: 'event' }>,
-    args: { token: tokenAddress as `0x${string}` },
-    fromBlock: from,
-    toBlock: latest,
-  });
+  const window = 12000n;
+  const start = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
+  const event = launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === 'TokenBought') as Extract<(typeof launchpadFactoryAbi)[number], { type: 'event' }>;
+  const logs = [];
+  for (let chunkStart = start; chunkStart <= latest; chunkStart += 1900n) {
+    const chunkEnd = chunkStart + 1899n > latest ? latest : chunkStart + 1899n;
+    logs.push(...await rpcClient.getLogs({
+      address: factory,
+      event,
+      args: { token: tokenAddress as `0x${string}` },
+      fromBlock: chunkStart,
+      toBlock: chunkEnd,
+    }));
+  }
   return [...logs].reverse().map((log) => {
     const decoded = decodeEventLog({ abi: launchpadFactoryAbi, data: log.data, topics: log.topics });
     if (decoded.eventName !== 'TokenBought') return null;

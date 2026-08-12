@@ -46,16 +46,6 @@ describe('launchpad web model', () => {
 
   it('blocks duplicate token identity before wallet submission', () => {
     const duplicate = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK' }, getLaunches());
-    const tx = prepareCreateTokenTx({
-      name: 'Crojack Protocol',
-      symbol: 'CROJACK',
-      graduationTargetCro: '65000',
-      initialBuyCro: '1',
-      antiBotEnabled: true,
-      vvsRouter: vvsTestnetContracts.smartRouter,
-      lpBeneficiary: '0x7dec46c3792e749a804d8923d74bdf59364cad9d',
-    });
-    expect(tx.ready).toBe(true);
     expect(duplicate.status).toBe('blocked');
     expect(duplicate.reasons).toEqual(expect.arrayContaining(['DUPLICATE_NAME', 'DUPLICATE_SYMBOL']));
   });

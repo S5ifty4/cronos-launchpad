@@ -6,9 +6,26 @@ import { ReserveChart } from '../components/ReserveChart';
 import { SocialLinks } from '../components/SocialLinks';
 import { TokenGlyph } from '../components/TokenGlyph';
 import { TradePanel } from '../components/TradePanel';
+import { fetchOnchainBuyEvents, fetchOnchainLaunchState } from '../contracts/launchpadClient';
 import { fetchLaunchByAddress, fetchLaunchHolders, fetchLaunchTrades, getLaunchByAddress, getLaunches } from '../data/api';
 import type { HolderSnapshot, Launch, Trade } from '../data/types';
 import { cronosTestnet, shortAddress } from '../wallet/chains';
+
+function parseCroAmount(value: string) {
+  const match = value.replace(/,/g, '').match(/[\d.]+/);
+  return match ? Number(match[0]) : 0;
+}
+
+function withReserve(launch: Launch, reserveRaised: string, graduated: boolean): Launch {
+  const target = parseCroAmount(launch.graduationTarget) || 1;
+  const reserve = parseCroAmount(reserveRaised);
+  return {
+    ...launch,
+    reserveRaised,
+    progress: Math.min(100, Number(((reserve / target) * 100).toFixed(1))),
+    status: graduated ? 'Graduated' : reserve / target >= 0.85 ? 'Near graduation' : launch.status,
+  };
+}
 
 export function TokenPage({ address }: { address?: string }) {
   const knownLaunch = getLaunches().find((launch) => launch.address.toLowerCase() === address?.toLowerCase());
@@ -25,8 +42,19 @@ export function TokenPage({ address }: { address?: string }) {
       })
       .catch(() => undefined);
     fetchLaunchTrades(address).then(setTrades).catch(() => setTrades([]));
+    fetchOnchainLaunchState(address)
+      .then((state) => {
+        if (!state) return;
+        setIndexedLaunch((current) => withReserve(current ?? knownLaunch ?? getLaunchByAddress(address), state.reserveRaised, state.graduated));
+      })
+      .catch(() => undefined);
+    fetchOnchainBuyEvents(address)
+      .then((onchainTrades) => {
+        if (onchainTrades.length) setTrades(onchainTrades);
+      })
+      .catch(() => undefined);
     fetchLaunchHolders(address).then(setHolders).catch(() => setHolders([]));
-  }, [address]);
+  }, [address, knownLaunch]);
 
   useEffect(() => {
     refreshTokenData();

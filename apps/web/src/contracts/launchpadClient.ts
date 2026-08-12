@@ -1,4 +1,4 @@
-import { encodeFunctionData, keccak256, parseEther, stringToBytes } from 'viem';
+import { createPublicClient, decodeEventLog, encodeFunctionData, formatEther, http, keccak256, parseEther, stringToBytes } from 'viem';
 import { launchpadFactoryAbi } from './abis';
 import { addresses } from './addresses';
 
@@ -17,6 +17,8 @@ export type CreateTokenForm = {
 const zeroAddress = '0x0000000000000000000000000000000000000000' as const;
 const oneBillion = parseEther('1000000000');
 const oneHundredEightyDays = 180n * 24n * 60n * 60n;
+const cronosTestnetRpc = 'https://evm-t3.cronos.org/';
+const rpcClient = createPublicClient({ transport: http(cronosTestnetRpc) });
 
 function normalizeNumber(value: string) {
   return value.replace(/,/g, '').trim() || '0';
@@ -90,4 +92,53 @@ export function prepareBuyContributionTx({ tokenAddress, amountCro }: { tokenAdd
     ready: missing.length === 0,
     missing,
   };
+}
+
+export async function fetchOnchainLaunchState(tokenAddress: string) {
+  const factory = addresses.cronosTestnet.launchpadFactory;
+  if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
+  const state = await rpcClient.readContract({
+    address: factory,
+    abi: launchpadFactoryAbi,
+    functionName: 'launchStateByToken',
+    args: [tokenAddress as `0x${string}`],
+  });
+  const reserveRaisedWei = state[0];
+  const graduated = state[1];
+  return {
+    reserveRaisedWei,
+    reserveRaised: `${Number(formatEther(reserveRaisedWei)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
+    graduated,
+  };
+}
+
+export async function fetchOnchainBuyEvents(tokenAddress: string, fromBlock = 0n) {
+  const factory = addresses.cronosTestnet.launchpadFactory;
+  if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];
+  const latest = await rpcClient.getBlockNumber();
+  const window = 250000n;
+  const from = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
+  const logs = await rpcClient.getLogs({
+    address: factory,
+    event: launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === 'TokenBought') as Extract<(typeof launchpadFactoryAbi)[number], { type: 'event' }>,
+    args: { token: tokenAddress as `0x${string}` },
+    fromBlock: from,
+    toBlock: latest,
+  });
+  return [...logs].reverse().map((log) => {
+    const decoded = decodeEventLog({ abi: launchpadFactoryAbi, data: log.data, topics: log.topics });
+    if (decoded.eventName !== 'TokenBought') return null;
+    const croIn = decoded.args.croIn;
+    return {
+      side: 'Buy' as const,
+      wallet: decoded.args.buyer,
+      amount: `${Number(formatEther(croIn)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
+      tokens: 'reserve contribution',
+      age: `block ${log.blockNumber}`,
+      txHash: log.transactionHash,
+      blockNumber: Number(log.blockNumber),
+      croAmountWei: croIn.toString(),
+      reserveRaisedWei: decoded.args.reserveRaisedWei.toString(),
+    };
+  }).filter((trade): trade is NonNullable<typeof trade> => Boolean(trade));
 }

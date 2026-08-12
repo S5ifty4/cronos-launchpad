@@ -42,6 +42,26 @@ export async function persistEvents(events: DecodedLaunchpadEvent[], chainId: nu
         trader_address: event.buyer.toLowerCase(),
         side: 'buy',
         cro_amount_wei: event.croIn.toString(),
+        token_amount: event.tokensOut.toString(),
+        tx_hash: event.txHash,
+        block_number: event.blockNumber.toString(),
+        traded_at: new Date().toISOString(),
+      });
+      if (tradeError) throw tradeError;
+      const { error: launchError } = await supabaseAdmin
+        .from('launches')
+        .update({ reserve_raised_wei: event.reserveRaisedWei.toString() })
+        .eq('token_address', event.token.toLowerCase());
+      if (launchError) throw launchError;
+      trades += 1;
+    }
+    if (event.type === 'TokenSold') {
+      const { error: tradeError } = await supabaseAdmin.from('trades').insert({
+        token_address: event.token.toLowerCase(),
+        trader_address: event.seller.toLowerCase(),
+        side: 'sell',
+        cro_amount_wei: event.croOut.toString(),
+        token_amount: event.tokensIn.toString(),
         tx_hash: event.txHash,
         block_number: event.blockNumber.toString(),
         traded_at: new Date().toISOString(),

@@ -3,8 +3,10 @@ declare const process: { env: Record<string, string | undefined> };
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const cronosTestnetRpcUrl = (process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/').trim();
-const expectedFactoryAddress = (process.env.CRONOS_TESTNET_FACTORY_ADDRESS ?? '0xb39452a805657c6aaef5d804934d44c814f35906').trim().toLowerCase();
-const tokenCreatedTopic = '0x0a2b06d9ce955b36fbce175a41c3259e0b07266d9b8cb105442602d0b50d2049';
+const expectedFactoryAddress = (process.env.CRONOS_TESTNET_FACTORY_ADDRESS ?? '0xf88f79dead20f3932cb21590d3b29bec4e0336bb').trim().toLowerCase();
+// TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address wrappedNative,address lpBeneficiary,uint64 lpLockDurationSeconds)
+// Includes vvsRouter, wrappedNative/WCRO, lpBeneficiary, and lpLockDurationSeconds.
+const tokenCreatedTopic = '0xf5df120b25da30621a33445bb577a65225a029cdc4329befc8f5873126d5b7f6';
 
 const addressPattern = /^0x[a-fA-F0-9]{40}$/;
 const txPattern = /^0x[a-fA-F0-9]{64}$/;

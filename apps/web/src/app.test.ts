@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assessTokenIdentity } from '@cronos-launchpad/core';
-import { toFunctionSelector } from 'viem';
+import { toEventSelector, toFunctionSelector } from 'viem';
 import { launchpadFactoryAbi } from './contracts/abis';
 import { getLaunches } from './data/api';
 import { prepareBuyContributionTx, prepareCreateTokenTx } from './contracts/launchpadClient';
@@ -20,10 +20,10 @@ describe('launchpad web model', () => {
   it('prepares deterministic create-token calldata', () => {
     const tx = prepareCreateTokenTx({ name: 'Cronos Vault', symbol: 'CVLT', graduationTargetCro: '65000', initialBuyCro: '250', antiBotEnabled: true });
     expect(tx.data.startsWith('0x')).toBe(true);
-    expect(tx.data.slice(0, 10)).toBe('0xd928a6db');
+    expect(tx.data.slice(0, 10)).toBe('0x9300c4ea');
     expect(tx.value).toBe(250000000000000000000n);
     expect(tx.ready).toBe(false);
-    expect(tx.args).toHaveLength(12);
+    expect(tx.args).toHaveLength(13);
     const noAntiSnipe = prepareCreateTokenTx({ name: 'Cronos Vault', symbol: 'CVLT', graduationTargetCro: '65000', initialBuyCro: '250', antiBotEnabled: false });
     expect(noAntiSnipe.args[6]).toBe(false);
   });
@@ -31,8 +31,19 @@ describe('launchpad web model', () => {
   it('keeps frontend create-token ABI selector aligned with deployed contract signature', () => {
     const createToken = launchpadFactoryAbi.find((entry) => entry.type === 'function' && entry.name === 'createToken');
     expect(createToken).toBeTruthy();
-    expect(toFunctionSelector(createToken!)).toBe('0xd928a6db');
+    expect(toFunctionSelector(createToken!)).toBe('0x9300c4ea');
     expect(createToken!.inputs.at(-1)?.type).toBe('uint64');
+  });
+
+  it('keeps frontend/indexer event ABIs aligned with the Phase 2 factory events', () => {
+    const tokenCreated = launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === 'TokenCreated');
+    const tokenGraduated = launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === 'TokenGraduated');
+    expect(tokenCreated).toBeTruthy();
+    expect(tokenGraduated).toBeTruthy();
+    expect(toEventSelector(tokenCreated!)).toBe('0xf5df120b25da30621a33445bb577a65225a029cdc4329befc8f5873126d5b7f6');
+    expect(tokenCreated!.inputs.map((input) => input.name)).toEqual(expect.arrayContaining(['vvsRouter', 'wrappedNative', 'lpBeneficiary', 'lpLockDurationSeconds']));
+    expect(toEventSelector(tokenGraduated!)).toBe('0x2ae869ce430af477a9263f765314cd542b5fb53fcb524d62aec5fa82e9cf865f');
+    expect(tokenGraduated!.inputs.map((input) => input.name)).toEqual(expect.arrayContaining(['creator', 'vvsRouter', 'reserveRaisedWei', 'tokenLiquidity', 'liquidity', 'lpUnlocksAt']));
   });
 
   it('prepares real buy contribution calldata for the launch factory', () => {

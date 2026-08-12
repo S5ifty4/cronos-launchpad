@@ -1,5 +1,5 @@
 import { createPublicClient, decodeEventLog, encodeFunctionData, formatEther, http, keccak256, parseEther, stringToBytes } from 'viem';
-import { launchpadFactoryAbi } from './abis';
+import { launchTokenAbi, launchpadFactoryAbi } from './abis';
 import { addresses } from './addresses';
 
 export type CreateTokenForm = {
@@ -11,6 +11,7 @@ export type CreateTokenForm = {
   antiBotDurationSeconds?: bigint;
   antiBotBaseLimitCro?: string;
   vvsRouter?: `0x${string}`;
+  wrappedNative?: `0x${string}`;
   lpBeneficiary?: `0x${string}`;
 };
 
@@ -18,6 +19,7 @@ const zeroAddress = '0x0000000000000000000000000000000000000000' as const;
 const oneBillion = parseEther('1000000000');
 const oneHundredEightyDays = 180n * 24n * 60n * 60n;
 const cronosTestnetRpc = 'https://evm-t3.cronos.org/';
+const defaultWrappedNative = '0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4' as const;
 const rpcClient = createPublicClient({ transport: http(cronosTestnetRpc) });
 
 function normalizeNumber(value: string) {
@@ -37,12 +39,14 @@ function isNonNegativeNumber(value: string) {
 export function prepareCreateTokenTx(form: CreateTokenForm) {
   const to = addresses.cronosTestnet.launchpadFactory;
   const vvsRouter = form.vvsRouter ?? zeroAddress;
+  const wrappedNative = form.wrappedNative ?? defaultWrappedNative;
   const lpBeneficiary = form.lpBeneficiary ?? zeroAddress;
   const trimmedName = form.name.trim();
   const trimmedSymbol = form.symbol.trim().toUpperCase();
   const missing = [
     !to && 'VITE_CRONOS_TESTNET_FACTORY',
     vvsRouter === zeroAddress && 'VITE_VVS_ROUTER',
+    wrappedNative === zeroAddress && 'VITE_VVS_WCRO',
     lpBeneficiary === zeroAddress && 'wallet address',
     !trimmedName && 'token name',
     !trimmedSymbol && 'symbol',
@@ -62,6 +66,7 @@ export function prepareCreateTokenTx(form: CreateTokenForm) {
     form.antiBotDurationSeconds ?? 600n,
     parseEther(normalizeNumber(form.antiBotBaseLimitCro ?? '1000')),
     vvsRouter,
+    wrappedNative,
     lpBeneficiary,
     oneHundredEightyDays,
   ] as const;
@@ -89,6 +94,37 @@ export function prepareBuyContributionTx({ tokenAddress, amountCro }: { tokenAdd
     to,
     value: parseEther(validAmount ? normalizedAmount : '0'),
     data: encodeFunctionData({ abi: launchpadFactoryAbi, functionName: 'buy', args: [validToken ? tokenAddress as `0x${string}` : zeroAddress] }),
+    ready: missing.length === 0,
+    missing,
+  };
+}
+
+export function prepareApproveTokenTx({ tokenAddress, amountTokens }: { tokenAddress?: string; amountTokens: string }) {
+  const spender = addresses.cronosTestnet.launchpadFactory;
+  const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
+  const validAmount = isPositiveNumber(amountTokens);
+  const amount = parseEther(validAmount ? normalizeNumber(amountTokens) : '0');
+  const missing = [!spender && 'VITE_CRONOS_TESTNET_FACTORY', !validToken && 'token address', !validAmount && 'token amount'].filter(Boolean) as string[];
+  return {
+    to: validToken ? tokenAddress as `0x${string}` : undefined,
+    value: 0n,
+    data: encodeFunctionData({ abi: launchTokenAbi, functionName: 'approve', args: [spender || zeroAddress, amount] }),
+    ready: missing.length === 0,
+    missing,
+  };
+}
+
+export function prepareSellTokenTx({ tokenAddress, amountTokens, minCroOut = '0' }: { tokenAddress?: string; amountTokens: string; minCroOut?: string }) {
+  const to = addresses.cronosTestnet.launchpadFactory;
+  const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
+  const validAmount = isPositiveNumber(amountTokens);
+  const tokensIn = parseEther(validAmount ? normalizeNumber(amountTokens) : '0');
+  const minCro = parseEther(isNonNegativeNumber(minCroOut) ? normalizeNumber(minCroOut) : '0');
+  const missing = [!to && 'VITE_CRONOS_TESTNET_FACTORY', !validToken && 'token address', !validAmount && 'token amount'].filter(Boolean) as string[];
+  return {
+    to,
+    value: 0n,
+    data: encodeFunctionData({ abi: launchpadFactoryAbi, functionName: 'sell', args: [validToken ? tokenAddress as `0x${string}` : zeroAddress, tokensIn, minCro] }),
     ready: missing.length === 0,
     missing,
   };

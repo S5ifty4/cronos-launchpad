@@ -36,6 +36,7 @@ const createHash = await factory.write.createToken([
   0,
   eth('1000'),
   router.address,
+  '0x000000000000000000000000000000000000c0fe',
   lpBeneficiary.account.address,
   180n * 24n * 60n * 60n,
 ], { account: creator.account, value: eth('1') });
@@ -48,6 +49,11 @@ const state = await factory.read.launchStateByToken([token]);
 const lock = await vault.read.locks([state[2]]);
 const endBlock = await publicClient.getBlockNumber();
 
+const expectedEvents = ['TokenCreated', 'TokenBought', 'TokenGraduated'];
+if (state[3] !== '0x0000000000000000000000000000000000000000') {
+  expectedEvents.push('LpDeposited');
+}
+
 const proof = {
   chainId,
   mode: 'local-simulation',
@@ -57,7 +63,7 @@ const proof = {
   transactions: { create: createHash, buy: buyHash, graduate: graduateHash },
   graduation: { reserveRaisedCro: formatEther(state[0]), graduated: state[1], liquidity: state[4].toString(), lpUnlocksAt: state[5].toString() },
   lpLock: { beneficiary: lock[0], amount: lock[1].toString(), unlocksAt: lock[2].toString() },
-  expectedEvents: ['TokenCreated', 'TokenBought', 'TokenGraduated', 'LpDeposited'],
+  expectedEvents,
 };
 
 mkdirSync(join(process.cwd(), 'deployments'), { recursive: true });

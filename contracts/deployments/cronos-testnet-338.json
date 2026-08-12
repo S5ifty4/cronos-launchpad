@@ -1,11 +1,11 @@
 {
   "chainId": 338,
   "deployer": "0x7dec46c3792e749a804d8923d74bdf59364cad9d",
-  "deployedAt": "2026-08-11T03:55:13.375Z",
+  "deployedAt": "2026-08-12T06:59:19.875Z",
   "contracts": {
-    "nameRegistry": "0xf19ad9502f0c6d8eb29e8db636fa4c97c86ded12",
-    "timelockedLpVault": "0xb81ad8045f49900049c3e9191e5e154ce6b38d45",
-    "launchpadFactory": "0xb39452a805657c6aaef5d804934d44c814f35906"
+    "nameRegistry": "0x01d292d6233bc2c1f7cfed9c548a6196f50451df",
+    "timelockedLpVault": "0x9826d7d3aa974d3aa6a7deb35566f1c76d814ed1",
+    "launchpadFactory": "0xf88f79dead20f3932cb21590d3b29bec4e0336bb"
   },
   "graduation": {
     "vvsRouter": "0xC74C960708f043E04a84038c6D1136EA7Fcb16a1",

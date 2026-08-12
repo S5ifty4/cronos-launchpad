@@ -6,8 +6,8 @@ import { blockRanges, summarizeSimulationProof } from '../src/poller.js';
 describe('indexer skeleton', () => {
   it('advances last indexed block from decoded events', () => {
     const state = nextState({ chainId: 338, lastIndexedBlock: 10n }, [
-      { type: 'TokenCreated', token: '0x1', creator: '0x2', name: 'Test Token', symbol: 'TEST', graduationTargetWei: 65_000n, antiBotEnabled: true, vvsRouter: '0xrouter', blockNumber: 12n, txHash: '0xaaa' },
-      { type: 'TokenBought', token: '0x1', buyer: '0x3', croIn: 1n, reserveRaisedWei: 1n, blockNumber: 11n, txHash: '0xbbb' },
+      { type: 'TokenCreated', token: '0x1', creator: '0x2', name: 'Test Token', symbol: 'TEST', graduationTargetWei: 65_000n, antiBotEnabled: true, vvsRouter: '0xrouter', wrappedNative: '0xwcro', lpBeneficiary: '0xlpben', lpLockDurationSeconds: 15552000n, blockNumber: 12n, txHash: '0xaaa' },
+      { type: 'TokenBought', token: '0x1', buyer: '0x3', croIn: 1n, tokensOut: 2n, reserveRaisedWei: 1n, blockNumber: 11n, txHash: '0xbbb' },
     ]);
     assert.equal(state.lastIndexedBlock, 12n);
   });

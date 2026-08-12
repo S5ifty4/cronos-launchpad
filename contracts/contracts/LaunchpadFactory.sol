@@ -21,6 +21,10 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     error GraduationTargetNotMet(uint256 reserveRaised, uint256 target);
     error TransferFailed();
     error PairNotFound();
+    error InsufficientTokenOutput();
+    error InsufficientCroOutput();
+    error SellUnavailable(address token);
+    error TokenTransferFailed();
 
     struct LaunchConfig {
         bytes32 normalizedNameHash;
@@ -32,6 +36,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         bool antiBotEnabled;
         address creator;
         address vvsRouter;
+        address wrappedNative;
         address lpBeneficiary;
         uint64 lpLockDurationSeconds;
     }
@@ -43,6 +48,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         address lpVault;
         uint256 liquidity;
         uint256 lpUnlocksAt;
+        uint256 tokensSoldWei;
     }
 
     NameRegistry public immutable nameRegistry;
@@ -62,11 +68,13 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         uint256 graduationTargetWei,
         bool antiBotEnabled,
         address vvsRouter,
+        address wrappedNative,
         address lpBeneficiary,
         uint64 lpLockDurationSeconds
     );
 
-    event TokenBought(address indexed token, address indexed buyer, uint256 croIn, uint256 reserveRaisedWei);
+    event TokenBought(address indexed token, address indexed buyer, uint256 croIn, uint256 tokensOut, uint256 reserveRaisedWei);
+    event TokenSold(address indexed token, address indexed seller, uint256 tokensIn, uint256 croOut, uint256 reserveRaisedWei);
     event TokenGraduated(
         address indexed token,
         address indexed creator,
@@ -98,12 +106,13 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         uint64 antiBotDurationSeconds,
         uint256 antiBotBaseLimitWei,
         address vvsRouter,
+        address wrappedNative,
         address lpBeneficiary,
         uint64 lpLockDurationSeconds
     ) external payable nonReentrant returns (address token) {
         if (totalSupply == 0) revert InvalidSupply();
         if (graduationTargetWei == 0) revert InvalidGraduationTarget();
-        if (vvsRouter == address(0) || lpBeneficiary == address(0)) revert InvalidAddress();
+        if (vvsRouter == address(0) || wrappedNative == address(0) || lpBeneficiary == address(0)) revert InvalidAddress();
         if (lpLockDurationSeconds < 30 days) revert InvalidLpLockDuration();
 
         token = address(new LaunchToken(name, symbol, 18, totalSupply, address(this), msg.sender));
@@ -119,6 +128,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             antiBotEnabled: antiBotEnabled,
             creator: msg.sender,
             vvsRouter: vvsRouter,
+            wrappedNative: wrappedNative,
             lpBeneficiary: lpBeneficiary,
             lpLockDurationSeconds: lpLockDurationSeconds
         });
@@ -134,6 +144,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             graduationTargetWei,
             antiBotEnabled,
             vvsRouter,
+            wrappedNative,
             lpBeneficiary,
             lpLockDurationSeconds
         );
@@ -145,6 +156,39 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
 
     function buy(address token) external payable nonReentrant {
         _buy(token, msg.sender, msg.value);
+    }
+
+    function sell(address token, uint256 tokensIn, uint256 minCroOut) external nonReentrant {
+        LaunchConfig memory config = launchConfigByToken[token];
+        if (config.creator == address(0)) revert LaunchNotFound(token);
+        LaunchState storage state = launchStateByToken[token];
+        if (state.graduated) revert SellUnavailable(token);
+        if (tokensIn == 0) revert TransferFailed();
+
+        uint256 croOut = quoteSellCro(token, tokensIn);
+        if (croOut < minCroOut) revert InsufficientCroOutput();
+        if (croOut > state.reserveRaisedWei) revert InsufficientCroOutput();
+
+        bool ok = IERC20(token).transferFrom(msg.sender, address(this), tokensIn);
+        if (!ok) revert TokenTransferFailed();
+        state.tokensSoldWei -= tokensIn;
+        state.reserveRaisedWei -= croOut;
+
+        (bool sent, ) = payable(msg.sender).call{value: croOut}("");
+        if (!sent) revert TransferFailed();
+        emit TokenSold(token, msg.sender, tokensIn, croOut, state.reserveRaisedWei);
+    }
+
+    function quoteBuyTokens(address token, uint256 croIn) public view returns (uint256) {
+        LaunchConfig memory config = launchConfigByToken[token];
+        if (config.creator == address(0) || croIn == 0) return 0;
+        return (croIn * config.totalSupply) / (config.graduationTargetWei * 2);
+    }
+
+    function quoteSellCro(address token, uint256 tokensIn) public view returns (uint256) {
+        LaunchConfig memory config = launchConfigByToken[token];
+        if (config.creator == address(0) || tokensIn == 0) return 0;
+        return (tokensIn * config.graduationTargetWei * 2) / config.totalSupply;
     }
 
     function graduate(address token, uint256 minTokenAmount, uint256 minCroAmount, uint256 deadline) external nonReentrant {
@@ -163,25 +207,31 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         if (tokenLiquidity == 0) revert InvalidSupply();
 
         IVvsRouter router = IVvsRouter(config.vvsRouter);
+        address pairBeforeAdd = _tryPair(config.vvsRouter, token, config.wrappedNative);
+        address lpRecipient = pairBeforeAdd == address(0) ? config.lpBeneficiary : address(this);
         IERC20(token).approve(config.vvsRouter, tokenLiquidity);
         (uint256 amountToken, , uint256 liquidity) = router.addLiquidityETH{value: reserveToSeed}(
             token,
             tokenLiquidity,
             minTokenAmount,
             minCroAmount,
-            address(this),
+            lpRecipient,
             deadline
         );
 
-        address pair = IVvsFactory(router.factory()).getPair(token, router.WETH());
-        if (pair == address(0) || liquidity == 0) revert PairNotFound();
-
-        uint256 lpUnlocksAt = block.timestamp + config.lpLockDurationSeconds;
-        IERC20(pair).approve(address(lpVault), liquidity);
-        lpVault.deposit(pair, config.lpBeneficiary, liquidity, lpUnlocksAt);
+        if (liquidity == 0) revert PairNotFound();
+        address pair = pairBeforeAdd == address(0) ? _tryPair(config.vvsRouter, token, config.wrappedNative) : pairBeforeAdd;
+        uint256 lpUnlocksAt = 0;
+        address lpVaultAddress = address(0);
+        if (pair != address(0) && lpRecipient == address(this)) {
+            lpUnlocksAt = block.timestamp + config.lpLockDurationSeconds;
+            IERC20(pair).approve(address(lpVault), liquidity);
+            lpVault.deposit(pair, config.lpBeneficiary, liquidity, lpUnlocksAt);
+            lpVaultAddress = address(lpVault);
+        }
 
         state.pair = pair;
-        state.lpVault = address(lpVault);
+        state.lpVault = lpVaultAddress;
         state.liquidity = liquidity;
         state.lpUnlocksAt = lpUnlocksAt;
 
@@ -190,7 +240,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             config.creator,
             config.vvsRouter,
             pair,
-            address(lpVault),
+            lpVaultAddress,
             reserveToSeed,
             amountToken,
             liquidity,
@@ -209,15 +259,33 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     function _buy(address token, address buyer, uint256 croIn) internal {
         LaunchConfig memory config = launchConfigByToken[token];
         if (config.creator == address(0)) revert LaunchNotFound(token);
+        LaunchState storage state = launchStateByToken[token];
+        if (state.graduated) revert AlreadyGraduated(token);
         if (croIn == 0) revert TransferFailed();
 
         uint256 limit = currentAntiBotLimit(token);
         if (croIn > limit) revert AntiBotLimitExceeded(croIn, limit);
 
-        launchStateByToken[token].reserveRaisedWei += croIn;
+        uint256 tokensOut = quoteBuyTokens(token, croIn);
+        if (tokensOut == 0) revert InsufficientTokenOutput();
+        if (IERC20(token).balanceOf(address(this)) < tokensOut) revert InsufficientTokenOutput();
+
+        state.reserveRaisedWei += croIn;
+        state.tokensSoldWei += tokensOut;
         lastBuyAtByTokenByWallet[token][buyer] = uint64(block.timestamp);
 
-        // MVP scaffold: pricing/token-out math comes next; reserve accounting + launch protection are in place now.
-        emit TokenBought(token, buyer, croIn, launchStateByToken[token].reserveRaisedWei);
+        bool ok = IERC20(token).transfer(buyer, tokensOut);
+        if (!ok) revert TokenTransferFailed();
+        emit TokenBought(token, buyer, croIn, tokensOut, state.reserveRaisedWei);
+    }
+
+    function _tryPair(address routerAddress, address token, address wrappedNative) internal view returns (address pair) {
+        (bool factoryOk, bytes memory factoryData) = routerAddress.staticcall(abi.encodeWithSignature("factory()"));
+        if (!factoryOk || factoryData.length < 32) return address(0);
+        address factoryAddress = abi.decode(factoryData, (address));
+        if (factoryAddress == address(0)) return address(0);
+        (bool pairOk, bytes memory pairData) = factoryAddress.staticcall(abi.encodeWithSignature("getPair(address,address)", token, wrappedNative));
+        if (!pairOk || pairData.length < 32) return address(0);
+        pair = abi.decode(pairData, (address));
     }
 }

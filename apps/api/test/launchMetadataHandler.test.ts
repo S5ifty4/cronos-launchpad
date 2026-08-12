@@ -3,13 +3,13 @@ import { describe, it } from 'node:test';
 
 const receipt = {
   status: '0x1',
-  to: '0xb39452a805657c6aaef5d804934d44c814f35906',
+  to: '0xf88f79dead20f3932cb21590d3b29bec4e0336bb',
   from: '0x7dec46c3792e749a804d8923d74bdf59364cad9d',
   blockNumber: '0x10',
   logs: [{
-    address: '0xb39452a805657c6aaef5d804934d44c814f35906',
+    address: '0xf88f79dead20f3932cb21590d3b29bec4e0336bb',
     topics: [
-      '0x0a2b06d9ce955b36fbce175a41c3259e0b07266d9b8cb105442602d0b50d2049',
+      '0xf5df120b25da30621a33445bb577a65225a029cdc4329befc8f5873126d5b7f6',
       '0x000000000000000000000000353b2c04d642ece09815778628e35c79d2d5ad22',
       '0x0000000000000000000000007dec46c3792e749a804d8923d74bdf59364cad9d',
     ],
@@ -19,9 +19,9 @@ const receipt = {
 
 const tx = {
   from: '0x7dec46c3792e749a804d8923d74bdf59364cad9d',
-  to: '0xb39452a805657c6aaef5d804934d44c814f35906',
+  to: '0xf88f79dead20f3932cb21590d3b29bec4e0336bb',
   value: '0xde0b6b3a7640000',
-  input: '0xd928a6db',
+  input: '0x9300c4ea',
 };
 
 function makeResponse() {
@@ -40,6 +40,7 @@ function makeResponse() {
 async function loadHandler(fetchImpl: typeof fetch) {
   process.env.SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+  process.env.CRONOS_TESTNET_FACTORY_ADDRESS = '0xf88f79dead20f3932cb21590d3b29bec4e0336bb';
   globalThis.fetch = fetchImpl;
   const module = await import(`../../../api/launch-metadata.ts?case=${Date.now()}-${Math.random()}`);
   return module.default as (req: { method?: string; body?: unknown }, res: ReturnType<typeof makeResponse>) => Promise<void>;

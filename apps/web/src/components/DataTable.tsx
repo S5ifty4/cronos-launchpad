@@ -30,8 +30,8 @@ export function HoldersTable({ holders }: { holders: HolderSnapshot[] }) {
       )) : (
         <div className="dataNotice">
           <b>Not live yet</b>
-          <span>Launch tokens are held by the factory until pricing/distribution is added.</span>
-          <span>Real holder snapshots require Phase 2 token distribution or ERC20 transfer indexing.</span>
+          <span>Launch tokens are distributed on buy and redeemed on sell before graduation.</span>
+          <span>Holder snapshots appear after ERC20 transfer indexing is enabled.</span>
         </div>
       )}
     </div>

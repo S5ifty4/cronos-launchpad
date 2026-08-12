@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { assessTokenIdentity } from '@cronos-launchpad/core';
 import { toEventSelector, toFunctionSelector } from 'viem';
 import { launchpadFactoryAbi } from './contracts/abis';
-import { getLaunches } from './data/api';
+import { getDemoLaunchesForTests } from './data/api';
 import { prepareBuyContributionTx, prepareCreateTokenTx } from './contracts/launchpadClient';
 import { envAddress } from './contracts/addresses';
 import { cronosMainnet, cronosTestnet, explorerTxUrl, vvsTestnetContracts } from './wallet/chains';
@@ -12,7 +12,7 @@ import { filterLaunches } from './data/exploreFilters';
 
 describe('launchpad web model', () => {
   it('uses shared anti-vamp rules for launch form preflight', () => {
-    const result = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK2' }, getLaunches());
+    const result = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK2' }, getDemoLaunchesForTests());
     expect(result.status).toBe('blocked');
     expect(result.reasons).toContain('DUPLICATE_NAME');
   });
@@ -65,7 +65,7 @@ describe('launchpad web model', () => {
   });
 
   it('blocks duplicate token identity before wallet submission', () => {
-    const duplicate = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK' }, getLaunches());
+    const duplicate = assessTokenIdentity({ name: 'Crojack Protocol', symbol: 'CROJACK' }, getDemoLaunchesForTests());
     expect(duplicate.status).toBe('blocked');
     expect(duplicate.reasons).toEqual(expect.arrayContaining(['DUPLICATE_NAME', 'DUPLICATE_SYMBOL']));
   });
@@ -109,7 +109,7 @@ describe('launchpad web model', () => {
   });
 
   it('filters launch board results by tab and search query', () => {
-    const launches = getLaunches();
+    const launches = getDemoLaunchesForTests();
     expect(filterLaunches(launches, { tab: 'near', query: '' }).every((launch) => launch.status === 'Near graduation')).toBe(true);
     expect(filterLaunches(launches, { tab: 'graduated', query: '' }).every((launch) => launch.status === 'Graduated')).toBe(true);
     expect(filterLaunches(launches, { tab: 'no-tax', query: '' }).every((launch) => launch.taxBips === 0)).toBe(true);

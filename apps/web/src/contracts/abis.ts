@@ -29,6 +29,18 @@ export const launchpadFactoryAbi = [
   },
   {
     type: 'function',
+    name: 'graduate',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'minTokenAmount', type: 'uint256' },
+      { name: 'minCroAmount', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
     name: 'sell',
     stateMutability: 'nonpayable',
     inputs: [{ name: 'token', type: 'address' }, { name: 'tokensIn', type: 'uint256' }, { name: 'minCroOut', type: 'uint256' }],

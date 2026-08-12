@@ -114,6 +114,20 @@ export function prepareApproveTokenTx({ tokenAddress, amountTokens }: { tokenAdd
   };
 }
 
+export function prepareGraduateTokenTx({ tokenAddress }: { tokenAddress?: string }) {
+  const to = addresses.cronosTestnet.launchpadFactory;
+  const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
+  const missing = [!to && 'VITE_CRONOS_TESTNET_FACTORY', !validToken && 'token address'].filter(Boolean) as string[];
+  return {
+    to,
+    value: 0n,
+    data: encodeFunctionData({ abi: launchpadFactoryAbi, functionName: 'graduate', args: [validToken ? tokenAddress as `0x${string}` : zeroAddress, 0n, 0n, deadline] }),
+    ready: missing.length === 0,
+    missing,
+  };
+}
+
 export function prepareSellTokenTx({ tokenAddress, amountTokens, minCroOut = '0' }: { tokenAddress?: string; amountTokens: string; minCroOut?: string }) {
   const to = addresses.cronosTestnet.launchpadFactory;
   const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
@@ -174,7 +188,7 @@ export async function fetchOnchainBuyEvents(tokenAddress: string, fromBlock = 0n
       side: 'Buy' as const,
       wallet: decoded.args.buyer,
       amount: `${Number(formatEther(croIn)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
-      tokens: 'reserve contribution',
+      tokens: `${Number(formatEther(decoded.args.tokensOut)).toLocaleString(undefined, { maximumFractionDigits: 3 })} tokens`,
       age: `block ${log.blockNumber}`,
       txHash: log.transactionHash,
       blockNumber: Number(log.blockNumber),

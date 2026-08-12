@@ -1,33 +1,32 @@
-import { creatorProfile, holders, launches, proofPackage, trades } from './mock';
+import { creatorProfile, launches, proofPackage } from './mock';
 import { fetchSupabaseHolderSnapshots, fetchSupabaseLaunchByAddress, fetchSupabaseLaunches, fetchSupabaseLaunchTrades } from './supabase';
+import type { HolderSnapshot, Launch, Trade } from './types';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+const enableDemoFallback = import.meta.env.VITE_ENABLE_DEMO_FALLBACK === 'true';
 
-async function fetchOrFallback<T>(path: string, fallback: T): Promise<T> {
-  if (!apiBase) return fallback;
+async function fetchOptional<T>(path: string): Promise<T | null> {
+  if (!apiBase) return null;
   try {
     const response = await fetch(`${apiBase}${path}`);
-    if (!response.ok) return fallback;
+    if (!response.ok) return null;
     return await response.json() as T;
   } catch {
-    return fallback;
+    return null;
   }
 }
 
 export function getLaunches() {
+  return enableDemoFallback ? launches : [];
+}
+
+export function getDemoLaunchesForTests() {
   return launches;
 }
 
 export function getLaunchByAddress(address?: string) {
-  return launches.find((launch) => launch.address.toLowerCase() === address?.toLowerCase()) ?? launches[0]!;
-}
-
-export function getLaunchTrades() {
-  return trades;
-}
-
-export function getLaunchHolders() {
-  return holders;
+  if (!enableDemoFallback) return undefined;
+  return launches.find((launch) => launch.address.toLowerCase() === address?.toLowerCase());
 }
 
 export function getCreatorProfile() {
@@ -38,34 +37,40 @@ export function getProofPackage() {
   return proofPackage;
 }
 
-export async function fetchLaunches() {
+export async function fetchLaunches(): Promise<Launch[]> {
   const supabaseLaunches = await fetchSupabaseLaunches();
   if (supabaseLaunches) return supabaseLaunches;
-  return fetchOrFallback('/launches', launches);
+  const apiLaunches = await fetchOptional<Launch[]>('/launches');
+  if (apiLaunches) return apiLaunches;
+  return enableDemoFallback ? launches : [];
 }
 
-export async function fetchLaunchByAddress(address: string) {
+export async function fetchLaunchByAddress(address: string): Promise<Launch | null> {
   const supabaseLaunch = await fetchSupabaseLaunchByAddress(address);
   if (supabaseLaunch) return supabaseLaunch;
-  return fetchOrFallback(`/launches/${address}`, getLaunchByAddress(address));
+  const apiLaunch = await fetchOptional<Launch>(`/launches/${address}`);
+  if (apiLaunch) return apiLaunch;
+  return getLaunchByAddress(address) ?? null;
 }
 
-export async function fetchLaunchTrades(address: string) {
+export async function fetchLaunchTrades(address: string): Promise<Trade[]> {
   const supabaseTrades = await fetchSupabaseLaunchTrades(address);
   if (supabaseTrades) return supabaseTrades;
-  return fetchOrFallback(`/launches/${address}/trades`, trades);
+  const apiTrades = await fetchOptional<Trade[]>(`/launches/${address}/trades`);
+  return apiTrades ?? [];
 }
 
-export async function fetchLaunchHolders(address: string) {
+export async function fetchLaunchHolders(address: string): Promise<HolderSnapshot[]> {
   const supabaseHolders = await fetchSupabaseHolderSnapshots(address);
   if (supabaseHolders) return supabaseHolders;
-  return fetchOrFallback(`/launches/${address}/holders`, []);
+  const apiHolders = await fetchOptional<HolderSnapshot[]>(`/launches/${address}/holders`);
+  return apiHolders ?? [];
 }
 
 export function fetchCreatorProfile(wallet: string) {
-  return fetchOrFallback(`/creators/${wallet}`, creatorProfile);
+  return fetchOptional(`/creators/${wallet}`).then((profile) => profile ?? creatorProfile);
 }
 
 export function fetchProofPackage() {
-  return fetchOrFallback('/proof', proofPackage);
+  return fetchOptional('/proof').then((proof) => proof ?? proofPackage);
 }

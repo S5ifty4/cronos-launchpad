@@ -4,14 +4,15 @@ import { decodeEventLog, parseAbiItem } from 'viem';
 import { usePublicClient } from 'wagmi';
 import { Badge } from '../components/Badge';
 import { prepareCreateTokenTx } from '../contracts/launchpadClient';
-import { fetchLaunches, getLaunches } from '../data/api';
+import { fetchLaunches } from '../data/api';
+import type { Launch } from '../data/types';
 import { uploadTokenImage } from '../data/supabase';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 import { vvsTestnetContracts, explorerTxUrl, shortAddress } from '../wallet/chains';
 import { ToggleRow } from '../components/ToggleRow';
 import { normalizeSocialUrl, SocialLinks } from '../components/SocialLinks';
 
-const tokenCreatedEvent = parseAbiItem('event TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address lpBeneficiary,uint64 lpLockDurationSeconds)');
+const tokenCreatedEvent = parseAbiItem('event TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address wrappedNative,address lpBeneficiary,uint64 lpLockDurationSeconds)');
 
 function tokenCreatedFromLogs(logs: readonly { topics: [] | [`0x${string}`, ...`0x${string}`[]]; data: `0x${string}` }[]) {
   for (const log of logs) {
@@ -59,7 +60,7 @@ export function CreatePage() {
   const [txError, setTxError] = useState<string>();
   const [submittedTxKey, setSubmittedTxKey] = useState<string>();
   const [txStatus, setTxStatus] = useState<'idle' | 'submitted' | 'confirming' | 'confirmed' | 'failed'>('idle');
-  const [existingIdentities, setExistingIdentities] = useState(getLaunches());
+  const [existingIdentities, setExistingIdentities] = useState<Launch[]>([]);
   const [identityLoading, setIdentityLoading] = useState(true);
   const wallet = useLaunchpadWallet();
   const publicClient = usePublicClient({ chainId: wallet.chainId });
@@ -109,7 +110,7 @@ export function CreatePage() {
         if (!cancelled) setExistingIdentities(launches);
       })
       .catch(() => {
-        if (!cancelled) setTxError('Live duplicate preflight could not refresh; using bundled fallback list.');
+        if (!cancelled) setTxError('Live duplicate preflight could not refresh. Creation remains blocked until indexed launch data loads.');
       })
       .finally(() => {
         if (!cancelled) setIdentityLoading(false);
@@ -263,7 +264,7 @@ export function CreatePage() {
             <dt>Normalized symbol</dt><dd>{identity.normalizedSymbol}</dd>
             <dt>Reasons</dt><dd>{identity.reasons.length ? identity.reasons.join(', ') : 'None'}</dd>
             <dt>Anti-snipe cap</dt><dd>{currentLimit ? `${currentLimit} CRO max buy at minute 3` : 'Disabled for this launch'}</dd>
-            <dt>Estimated total</dt><dd>{totalCost.toLocaleString()} CRO incl. mock fee</dd>
+            <dt>Estimated total</dt><dd>{totalCost.toLocaleString()} CRO incl. launch fee</dd>
             <dt>Tx readiness</dt><dd>{txReadiness}</dd>
             <dt>Calldata</dt><dd>{txPreview.data.slice(0, 18)}…{txPreview.data.slice(-10)}</dd>
           </dl>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { Badge } from '../components/Badge';
 import { Metric } from '../components/Metric';
-import { fetchLaunches, getLaunches } from '../data/api';
+import { fetchLaunches } from '../data/api';
 import type { Launch } from '../data/types';
 import { addresses } from '../contracts/addresses';
 import { shortAddress } from '../wallet/chains';
@@ -21,7 +21,7 @@ function missingMetadata(launch: Launch) {
 export function AdminPage() {
   const wallet = useLaunchpadWallet();
   const { open } = useAppKit();
-  const [launches, setLaunches] = useState<Launch[]>(() => getLaunches());
+  const [launches, setLaunches] = useState<Launch[]>([]);
   const [loading, setLoading] = useState(true);
   const isAdmin = sameAddress(wallet.address, deployerWallet);
 

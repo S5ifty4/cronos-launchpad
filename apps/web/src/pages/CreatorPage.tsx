@@ -3,7 +3,7 @@ import { useAppKit } from '@reown/appkit/react';
 import { Badge } from '../components/Badge';
 import { LaunchCard } from '../components/LaunchCard';
 import { Metric } from '../components/Metric';
-import { fetchLaunches, getLaunches } from '../data/api';
+import { fetchLaunches } from '../data/api';
 import type { Launch } from '../data/types';
 import { shortAddress } from '../wallet/chains';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
@@ -28,7 +28,7 @@ function metadataState(launch: Launch) {
 export function CreatorPage() {
   const wallet = useLaunchpadWallet();
   const { open } = useAppKit();
-  const [launches, setLaunches] = useState<Launch[]>(() => getLaunches());
+  const [launches, setLaunches] = useState<Launch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

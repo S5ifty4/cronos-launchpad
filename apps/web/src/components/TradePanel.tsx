@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import type { Launch } from '../data/types';
-import { prepareApproveTokenTx, prepareBuyContributionTx, prepareSellTokenTx } from '../contracts/launchpadClient';
+import { prepareApproveTokenTx, prepareBuyContributionTx, prepareGraduateTokenTx, prepareSellTokenTx } from '../contracts/launchpadClient';
 import { explorerTxUrl, shortAddress } from '../wallet/chains';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 
@@ -10,31 +10,43 @@ function parseCro(value: string) {
   return match ? Number(match[0]) : 0;
 }
 
+function sameAddress(a?: string, b?: string) {
+  return Boolean(a && b && a.toLowerCase() === b.toLowerCase());
+}
+
 export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirmed?: () => void }) {
   const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('1');
   const [txHash, setTxHash] = useState<string>();
-  const [status, setStatus] = useState<'idle' | 'approving' | 'simulating' | 'submitted' | 'confirmed' | 'failed'>('idle');
+  const [status, setStatus] = useState<'idle' | 'approving' | 'simulating' | 'submitted' | 'confirmed' | 'graduating' | 'failed'>('idle');
   const [error, setError] = useState<string>();
   const wallet = useLaunchpadWallet();
   const publicClient = usePublicClient({ chainId: wallet.chainId });
   const reserve = parseCro(launch.reserveRaised);
   const target = parseCro(launch.graduationTarget);
   const targetReached = target > 0 && reserve >= target;
+  const isCreator = sameAddress(wallet.address, launch.creator);
   const buyTx = useMemo(() => prepareBuyContributionTx({ tokenAddress: launch.address, amountCro: amount }), [launch.address, amount]);
   const approveTx = useMemo(() => prepareApproveTokenTx({ tokenAddress: launch.address, amountTokens: amount }), [launch.address, amount]);
   const sellTx = useMemo(() => prepareSellTokenTx({ tokenAddress: launch.address, amountTokens: amount }), [launch.address, amount]);
+  const graduateTx = useMemo(() => prepareGraduateTokenTx({ tokenAddress: launch.address }), [launch.address]);
   const activeTx = mode === 'buy' ? buyTx : sellTx;
-  const canTrade = !targetReached && activeTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && status !== 'approving' && status !== 'simulating' && status !== 'submitted';
+  const busy = status === 'approving' || status === 'simulating' || status === 'submitted' || status === 'graduating';
+  const canTrade = !targetReached && activeTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && !busy;
+  const canGraduate = targetReached && !launch.status.includes('Graduated') && isCreator && graduateTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && !busy;
   const readiness = targetReached
-    ? 'Graduation target reached. Trading/contributions close before LP seeding.'
+    ? launch.status === 'Graduated'
+      ? 'Graduated. Trading is closed and LP has been seeded.'
+      : isCreator
+        ? 'Target reached. Creator can graduate this launch when ready.'
+        : 'Target reached. Waiting for the creator to run graduation.'
     : !wallet.isConnected
       ? 'Connect wallet to trade this launch.'
       : !wallet.isCorrectChain
         ? 'Switch to Cronos Testnet.'
         : activeTx.ready ? (mode === 'buy' ? 'Ready to buy launch tokens.' : 'Ready to sell launch tokens back to reserve.') : `Waiting: ${activeTx.missing.join(', ')}`;
 
-  const submit = async () => {
+  const submitTrade = async () => {
     if (!canTrade) return;
     setError(undefined);
     setTxHash(undefined);
@@ -64,6 +76,29 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
     }
   };
 
+  const graduate = async () => {
+    if (!canGraduate) return;
+    setError(undefined);
+    setTxHash(undefined);
+    try {
+      if (!publicClient || !graduateTx.to) throw new Error('Graduation preflight is not ready yet.');
+      setStatus('simulating');
+      await publicClient.call({ account: wallet.address as `0x${string}`, to: graduateTx.to, data: graduateTx.data, value: graduateTx.value });
+      setStatus('graduating');
+      const hash = await wallet.sendTransaction(graduateTx);
+      if (!hash) return;
+      setTxHash(hash);
+      setStatus('submitted');
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status === 'reverted') throw new Error('Graduation reverted on Cronos.');
+      setStatus('confirmed');
+      onConfirmed?.();
+    } catch (err) {
+      setStatus('failed');
+      setError(err instanceof Error ? err.message : 'Graduation failed');
+    }
+  };
+
   return (
     <aside className="tradePanel">
       <h3>{targetReached ? 'Graduation ready' : 'Trade launch'}</h3>
@@ -71,7 +106,10 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
         <div className="miniPanel graduationNotice">
           <p className="eyebrow">Target reached</p>
           <h3>{launch.reserveRaised} / {launch.graduationTarget}</h3>
-          <p>The reserve target is met. Trading closes before LP seeding. Run graduation on the Phase 2 factory.</p>
+          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : isCreator ? 'You are the indexed creator. Run graduation to seed VVS-compatible liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
+          <button className="button primary" disabled={!canGraduate} onClick={graduate} type="button">
+            {status === 'graduating' ? 'Submitting graduation…' : status === 'submitted' ? 'Waiting for graduation…' : launch.status === 'Graduated' ? 'Graduated' : isCreator ? 'Graduate token' : 'Creator only'}
+          </button>
         </div>
       ) : null}
       <div className="buySell">
@@ -84,15 +122,15 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
         <dt>Action</dt><dd>{targetReached ? 'Graduate launch' : mode === 'buy' ? 'Buy launch tokens' : 'Sell launch tokens'}</dd>
         <dt>Pricing</dt><dd>Fixed v1 curve: target reserve buys 50% supply</dd>
         <dt>Creator</dt><dd title={launch.creator}>{shortAddress(launch.creator)}</dd>
-        <dt>LP status</dt><dd>{targetReached ? 'Ready for graduation' : 'Locks on graduation'}</dd>
+        <dt>LP status</dt><dd>{launch.status === 'Graduated' ? 'Seeded' : targetReached ? 'Ready for graduation' : 'Locks on graduation'}</dd>
         <dt>Readiness</dt><dd>{readiness}</dd>
       </dl>
-      <button className="button primary" disabled={!canTrade} onClick={submit} type="button">
+      <button className="button primary" disabled={!canTrade} onClick={submitTrade} type="button">
         {targetReached ? 'Trading closed' : status === 'approving' ? 'Approving…' : status === 'simulating' ? 'Checking tx…' : status === 'submitted' ? 'Waiting for confirmation…' : mode === 'buy' ? 'Buy tokens' : 'Sell tokens'}
       </button>
-      <p className="small">Phase 2 factory adds token output on buy, sell redemption, and WCRO-compatible graduation. Existing old-factory launches cannot use these new functions.</p>
+      <p className="small">Phase 2 factory adds token output on buy, sell redemption, and WCRO-compatible graduation. Old-factory launches cannot use these new functions.</p>
       {txHash && <p className="small">Tx: <a href={explorerTxUrl(txHash, wallet.chainId)} target="_blank" rel="noreferrer">{shortAddress(txHash)} ↗</a></p>}
-      {status === 'confirmed' && <p className="small">{mode === 'buy' ? 'Buy' : 'Sell'} confirmed.</p>}
+      {status === 'confirmed' && <p className="small">{targetReached ? 'Graduation' : mode === 'buy' ? 'Buy' : 'Sell'} confirmed.</p>}
       {error && <p className="small">Wallet: {error}</p>}
     </aside>
   );

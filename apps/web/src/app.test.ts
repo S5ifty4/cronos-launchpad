@@ -33,6 +33,9 @@ describe('launchpad web model', () => {
     expect(createToken).toBeTruthy();
     expect(toFunctionSelector(createToken!)).toBe('0x9300c4ea');
     expect(createToken!.inputs.at(-1)?.type).toBe('uint64');
+    const launchConfig = launchpadFactoryAbi.find((entry) => entry.type === 'function' && entry.name === 'launchConfigByToken');
+    expect(launchConfig).toBeTruthy();
+    expect(toFunctionSelector(launchConfig!)).toBe('0xf83cb3b0');
   });
 
   it('keeps frontend/indexer event ABIs aligned with the Phase 2 factory events', () => {

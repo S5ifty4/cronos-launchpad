@@ -66,7 +66,7 @@ export function TokenPage({ address }: { address?: string }) {
         <div className="miniPanel">
           <p className="eyebrow">Launch indexing</p>
           <h2>{address ? 'Indexing token data…' : 'Token address missing.'}</h2>
-          <p className="lede">{address ? 'The token may exist on Cronos Testnet, but no launch metadata is indexed yet. We no longer fall back to sample token data on production pages.' : 'Open a token page with /token/:address.'}</p>
+          <p className="lede">{address ? 'The token may exist on Cronos Testnet, but it is not indexed as a current Phase 2 factory launch. Production pages hide demo/sample and old-factory launches because buy/sell/graduation only work on Phase 2 tokens.' : 'Open a token page with /token/:address.'}</p>
           {address && <div className="queueList"><div><span>Token address</span><b>{shortAddress(address)}</b><em>pending metadata</em></div><div><span>Explore visibility</span><b>Waiting for indexer/Supabase</b><em>pending</em></div></div>}
           {address && <a className="button secondary" href={`${cronosTestnet.blockExplorerUrls[0]}/address/${address}`} target="_blank" rel="noreferrer">View contract on explorer ↗</a>}
         </div>

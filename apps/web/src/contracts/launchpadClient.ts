@@ -144,6 +144,28 @@ export function prepareSellTokenTx({ tokenAddress, amountTokens, minCroOut = '0'
   };
 }
 
+export async function isCurrentPhase2LaunchToken(tokenAddress: string) {
+  const factory = addresses.cronosTestnet.launchpadFactory;
+  if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return false;
+  try {
+    const config = await rpcClient.readContract({
+      address: factory,
+      abi: launchpadFactoryAbi,
+      functionName: 'launchConfigByToken',
+      args: [tokenAddress as `0x${string}`],
+    });
+    return config[7].toLowerCase() !== zeroAddress;
+  } catch {
+    return false;
+  }
+}
+
+export async function filterCurrentPhase2Launches<T extends { address: string }>(launches: T[]) {
+  if (!addresses.cronosTestnet.launchpadFactory) return [];
+  const checks = await Promise.all(launches.map(async (launch) => ({ launch, include: await isCurrentPhase2LaunchToken(launch.address) })));
+  return checks.filter((check) => check.include).map((check) => check.launch);
+}
+
 export async function fetchOnchainLaunchState(tokenAddress: string) {
   const factory = addresses.cronosTestnet.launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;

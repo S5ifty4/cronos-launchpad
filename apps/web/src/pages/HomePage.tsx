@@ -61,7 +61,7 @@ export function HomePage() {
           </div>
         </div>
         <div className="cards">{visibleLaunches.map((launch) => <LaunchCard launch={launch} key={launch.address} />)}</div>
-        {!visibleLaunches.length && <div className="miniPanel"><h2>{loading ? 'Loading indexed launches…' : 'No indexed launches yet.'}</h2><p className="lede">Create a Cronos Testnet launch or run the indexer after on-chain activity. Demo/sample launch cards are disabled in production.</p><a className="button primary" href="/create">Create first testnet launch</a></div>}
+        {!visibleLaunches.length && <div className="miniPanel"><h2>{loading ? 'Loading indexed launches…' : 'No indexed launches yet.'}</h2><p className="lede">Create a Cronos Testnet launch from the current Phase 2 factory or run the indexer after on-chain activity. Demo/sample and old-factory launches are hidden from production because buy/sell/graduation only work on Phase 2 tokens.</p><a className="button primary" href="/create">Create first testnet launch</a></div>}
       </section>
     </>
   );

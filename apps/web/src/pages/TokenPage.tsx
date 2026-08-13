@@ -6,7 +6,7 @@ import { ReserveChart } from '../components/ReserveChart';
 import { SocialLinks } from '../components/SocialLinks';
 import { TokenGlyph } from '../components/TokenGlyph';
 import { TradePanel } from '../components/TradePanel';
-import { fetchOnchainBuyEvents, fetchOnchainLaunchState } from '../contracts/launchpadClient';
+import { fetchOnchainLaunchState, fetchOnchainTradeEvents } from '../contracts/launchpadClient';
 import { fetchLaunchByAddress, fetchLaunchHolders, fetchLaunchTrades, getLaunches } from '../data/api';
 import type { HolderSnapshot, Launch, Trade } from '../data/types';
 import { cronosTestnet, shortAddress } from '../wallet/chains';
@@ -57,7 +57,7 @@ function TokenSkeleton({ address }: { address?: string }) {
       <div className="miniPanel tokenLoadingPanel">
         <div className="skeletonHeader"><span /><div><i /><i /></div></div>
         <div className="skeletonLines"><span /><span /><span /></div>
-        {address && <a className="button secondary" href={`${cronosTestnet.blockExplorerUrls[0]}/address/${address}`} target="_blank" rel="noreferrer">View contract on explorer ↗</a>}
+        {address && <a className="button secondary tokenLoadingExplorer" href={`${cronosTestnet.blockExplorerUrls[0]}/address/${address}`} target="_blank" rel="noreferrer">View contract on explorer ↗</a>}
       </div>
     </section>
   );
@@ -82,7 +82,7 @@ export function TokenPage({ address }: { address?: string }) {
       .catch(() => undefined)
       .finally(() => setLoading(false));
     fetchLaunchTrades(address).then(setTrades).catch(() => setTrades([]));
-    fetchOnchainBuyEvents(address)
+    fetchOnchainTradeEvents(address)
       .then((onchainTrades) => {
         if (onchainTrades.length) setTrades(onchainTrades);
       })

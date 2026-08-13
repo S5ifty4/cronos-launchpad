@@ -233,38 +233,61 @@ export async function fetchOnchainLaunchState(tokenAddress: string) {
   };
 }
 
-export async function fetchOnchainBuyEvents(tokenAddress: string, fromBlock = 0n) {
+export async function fetchOnchainTradeEvents(tokenAddress: string, fromBlock = 0n) {
   const factory = addresses.cronosTestnet.launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];
   const latest = await rpcClient.getBlockNumber();
   const window = 12000n;
   const start = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
-  const event = launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === 'TokenBought') as Extract<(typeof launchpadFactoryAbi)[number], { type: 'event' }>;
+  const events = ['TokenBought', 'TokenSold'].map((name) => launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === name) as Extract<(typeof launchpadFactoryAbi)[number], { type: 'event' }>);
   const logs = [];
-  for (let chunkStart = start; chunkStart <= latest; chunkStart += 1900n) {
-    const chunkEnd = chunkStart + 1899n > latest ? latest : chunkStart + 1899n;
-    logs.push(...await rpcClient.getLogs({
-      address: factory,
-      event,
-      args: { token: tokenAddress as `0x${string}` },
-      fromBlock: chunkStart,
-      toBlock: chunkEnd,
-    }));
+  for (const event of events) {
+    for (let chunkStart = start; chunkStart <= latest; chunkStart += 1900n) {
+      const chunkEnd = chunkStart + 1899n > latest ? latest : chunkStart + 1899n;
+      logs.push(...await rpcClient.getLogs({
+        address: factory,
+        event,
+        args: { token: tokenAddress as `0x${string}` },
+        fromBlock: chunkStart,
+        toBlock: chunkEnd,
+      }));
+    }
   }
-  return [...logs].reverse().map((log) => {
-    const decoded = decodeEventLog({ abi: launchpadFactoryAbi, data: log.data, topics: log.topics });
-    if (decoded.eventName !== 'TokenBought') return null;
-    const croIn = decoded.args.croIn;
-    return {
-      side: 'Buy' as const,
-      wallet: decoded.args.buyer,
-      amount: `${Number(formatEther(croIn)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
-      tokens: `${Number(formatEther(decoded.args.tokensOut)).toLocaleString(undefined, { maximumFractionDigits: 3 })} tokens`,
-      age: `block ${log.blockNumber}`,
-      txHash: log.transactionHash,
-      blockNumber: Number(log.blockNumber),
-      croAmountWei: croIn.toString(),
-      reserveRaisedWei: decoded.args.reserveRaisedWei.toString(),
-    };
-  }).filter((trade): trade is NonNullable<typeof trade> => Boolean(trade));
+  return logs
+    .sort((a, b) => Number(b.blockNumber - a.blockNumber) || Number(b.logIndex - a.logIndex))
+    .map((log) => {
+      const decoded = decodeEventLog({ abi: launchpadFactoryAbi, data: log.data, topics: log.topics });
+      if (decoded.eventName === 'TokenBought') {
+        const croIn = decoded.args.croIn;
+        return {
+          side: 'Buy' as const,
+          wallet: decoded.args.buyer,
+          amount: `${Number(formatEther(croIn)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
+          tokens: `${Number(formatEther(decoded.args.tokensOut)).toLocaleString(undefined, { maximumFractionDigits: 3 })} tokens`,
+          age: `block ${log.blockNumber}`,
+          txHash: log.transactionHash,
+          blockNumber: Number(log.blockNumber),
+          croAmountWei: croIn.toString(),
+          reserveRaisedWei: decoded.args.reserveRaisedWei.toString(),
+        };
+      }
+      if (decoded.eventName === 'TokenSold') {
+        const croOut = decoded.args.croOut;
+        return {
+          side: 'Sell' as const,
+          wallet: decoded.args.seller,
+          amount: `${Number(formatEther(croOut)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
+          tokens: `${Number(formatEther(decoded.args.tokensIn)).toLocaleString(undefined, { maximumFractionDigits: 3 })} tokens`,
+          age: `block ${log.blockNumber}`,
+          txHash: log.transactionHash,
+          blockNumber: Number(log.blockNumber),
+          croAmountWei: croOut.toString(),
+          reserveRaisedWei: decoded.args.reserveRaisedWei.toString(),
+        };
+      }
+      return null;
+    })
+    .filter((trade): trade is NonNullable<typeof trade> => Boolean(trade));
 }
+
+export const fetchOnchainBuyEvents = fetchOnchainTradeEvents;

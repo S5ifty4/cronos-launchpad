@@ -1,18 +1,18 @@
 import type { HolderSnapshot, Trade } from '../data/types';
-import { shortAddress } from '../wallet/chains';
+import { explorerTxUrl, shortAddress } from '../wallet/chains';
 
 export function TradesTable({ trades }: { trades: Trade[] }) {
   return (
     <div className="dataTable">
-      <h3>Recent reserve contributions</h3>
+      <h3>Trades</h3>
       {trades.length ? trades.map((trade) => (
         <div key={trade.txHash ?? `${trade.wallet}${trade.age}`}>
           <b className={trade.side === 'Buy' ? 'buy' : 'sell'}>{trade.side}</b>
           <span title={trade.wallet}>{shortAddress(trade.wallet)}</span>
           <span>{trade.amount}</span>
-          <span>{trade.age}</span>
+          <span>{trade.txHash ? <a href={explorerTxUrl(trade.txHash)} target="_blank" rel="noreferrer">tx ↗</a> : trade.age}</span>
         </div>
-      )) : <p className="small">No buy activity yet. Trades will appear here after the first confirmed buy.</p>}
+      )) : <p className="small">No trades yet. Buys and sells will appear here after confirmation.</p>}
     </div>
   );
 }

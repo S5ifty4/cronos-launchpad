@@ -36,7 +36,7 @@ export function ReserveChart({ launch, trades }: { launch: Launch; trades: Trade
         ))}
       </div>
       <div className="targetLine" style={{ bottom: `${Math.min(88, Math.max(20, (target / max) * 72 + 16))}%` }}><span>graduation target</span></div>
-      <div className="chartFooter"><span>Confirmed buys only</span><span>{trades.length ? `${trades.length} trade${trades.length === 1 ? '' : 's'}` : 'waiting for buys'}</span></div>
+      <div className="chartFooter"><span>Confirmed trades only</span><span>{trades.length ? `${trades.length} trade${trades.length === 1 ? '' : 's'}` : 'waiting for trades'}</span></div>
     </div>
   );
 }

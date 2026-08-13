@@ -9,7 +9,8 @@
     "deploy:check": "hardhat run scripts/check-env.ts",
     "deploy:local": "hardhat run scripts/deploy-local.ts",
     "simulate:launch": "hardhat run scripts/simulate-launch-flow.ts",
-    "deploy:cronos-testnet": "hardhat run scripts/deploy-cronos-testnet.ts --network cronosTestnet"
+    "deploy:cronos-testnet": "hardhat run scripts/deploy-cronos-testnet.ts --network cronosTestnet",
+    "deploy:cronos-testnet:v2-compatible": "hardhat run scripts/deploy-cronos-testnet-v2-compatible.ts --network cronosTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",

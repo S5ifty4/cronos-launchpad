@@ -53,7 +53,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
       /NameAlreadyClaimed|SymbolAlreadyClaimed/,
     );
 
-    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]);
+    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]) as `0x${string}`;
     assert.notEqual(token, zeroAddress);
   });
 
@@ -84,7 +84,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
     const args = defaultArgs(router.address, lpBeneficiary.account.address);
 
     await factory.write.createToken(args, { account: creator.account });
-    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]);
+    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]) as `0x${string}`;
     const launchToken = await viem.getContractAt('LaunchToken', token);
 
     await factory.write.buy([token], { account: creator.account, value: eth(10) });
@@ -109,7 +109,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
 
     const args = defaultArgs(router.address, lpBeneficiary.account.address);
     await factory.write.createToken(args, { account: creator.account, value: eth(20) });
-    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]);
+    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]) as `0x${string}`;
 
     const publicClient = await viem.getPublicClient();
     const block = await publicClient.getBlock();
@@ -125,7 +125,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
     const args = defaultArgs(router.address, lpBeneficiary.account.address);
 
     await factory.write.createToken(args, { account: creator.account, value: eth(10) });
-    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]);
+    const token = await registry.read.tokenByNameHash([nameHash('blue gecko')]) as `0x${string}`;
 
     await factory.write.buy([token], { account: creator.account, value: eth(10) });
 

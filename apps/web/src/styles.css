@@ -29,10 +29,10 @@ a { color: inherit; } button, input, textarea { font: inherit; }
 .navLinks { display: flex; gap: 8px; justify-content: center; }
 .navLinks a { color: var(--muted); text-decoration: none; border-radius: 999px; padding: 10px 12px; font-size: 14px; font-weight: 800; }
 .navLinks a:hover { color: var(--white); background: rgba(255,255,255,.06); }
-.connectButton { justify-self: end; text-decoration: none; border: 0; border-radius: 999px; background: var(--white); color: #000; padding: 12px 18px; font-weight: 900; cursor: pointer; }
+.connectButton { justify-self: end; min-height: 36px; text-decoration: none; border: 0; border-radius: 999px; background: var(--white); color: #000; padding: 0 16px; font-weight: 900; cursor: pointer; }
 .connectButton.muted { opacity: .65; cursor: wait; }
 .connectButton.warn { background: var(--orange); color: #170900; }
-.connectButton.connected { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: var(--white); border: 1px solid var(--line); }
+.connectButton.connected { height: 36px; min-height: 36px; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: var(--white); border: 1px solid var(--line); padding: 0 14px; }
 .walletGroup { justify-self: end; display: inline-flex; align-items: center; gap: 8px; }
 .navActions { justify-self: end; display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
 .networkStrip { display: flex; justify-content: flex-end; margin: 0 10px 24px; }

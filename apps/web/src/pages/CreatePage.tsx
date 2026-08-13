@@ -110,7 +110,7 @@ export function CreatePage() {
         if (!cancelled) setExistingIdentities(launches);
       })
       .catch(() => {
-        if (!cancelled) setTxError('Live duplicate preflight could not refresh. Creation remains blocked until indexed launch data loads.');
+        if (!cancelled) setTxError('Live duplicate preflight could not refresh. Creation remains blocked until launch data loads.');
       })
       .finally(() => {
         if (!cancelled) setIdentityLoading(false);
@@ -272,7 +272,7 @@ export function CreatePage() {
           {wallet.error && <p className="small">Wallet: {wallet.error}</p>}
           {txError && <p className="small">Wallet: {txError}</p>}
           {txHash && <p className="small">Tx hash: <a href={explorerTxUrl(txHash, wallet.chainId)} target="_blank" rel="noreferrer">{shortAddress(txHash)} ↗</a></p>}
-          {submittedThisConfig && <p className="small">Do not submit this form again. After confirmation we open the token page; Explore updates once the indexer writes the on-chain event.</p>}
+          {submittedThisConfig && <p className="small">Do not submit this form again. After confirmation we open the token page; Explore updates once the launch is available.</p>}
         </div>
       </div>
     </section>

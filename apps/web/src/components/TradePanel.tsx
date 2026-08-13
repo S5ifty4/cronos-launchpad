@@ -106,7 +106,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
         <div className="miniPanel graduationNotice">
           <p className="eyebrow">Target reached</p>
           <h3>{launch.reserveRaised} / {launch.graduationTarget}</h3>
-          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : isCreator ? 'You are the indexed creator. Run graduation to seed VVS-compatible liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
+          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : isCreator ? 'You are the creator. Run graduation to seed VVS-compatible liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
           <button className="button primary" disabled={!canGraduate} onClick={graduate} type="button">
             {status === 'graduating' ? 'Submitting graduation…' : status === 'submitted' ? 'Waiting for graduation…' : launch.status === 'Graduated' ? 'Graduated' : isCreator ? 'Graduate token' : 'Creator only'}
           </button>

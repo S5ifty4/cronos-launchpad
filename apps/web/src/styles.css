@@ -22,7 +22,7 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; bac
 main { position: relative; width: min(1160px, calc(100vw - 32px)); margin: 0 auto; padding: 18px 0 64px; }
 a { color: inherit; } button, input, textarea { font: inherit; }
 
-.topNav { position: sticky; top: 12px; z-index: 10; display: grid; grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 18px; width: calc(100% - 186px); margin-bottom: 34px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(4, 5, 7, .76); backdrop-filter: blur(18px); box-shadow: 0 20px 80px rgba(0,0,0,.42); box-sizing: border-box; }
+.topNav { position: sticky; top: 12px; z-index: 10; display: grid; grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 18px; margin-bottom: 34px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(4, 5, 7, .76); backdrop-filter: blur(18px); box-shadow: 0 20px 80px rgba(0,0,0,.42); }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 900; letter-spacing: -0.04em; font-size: 22px; }
 .brand span span { color: var(--cronos-blue); }
 .brandMark { width: 38px; height: 38px; border-radius: 50%; object-fit: contain; filter: drop-shadow(0 0 16px rgba(76, 219, 255, .42)); }
@@ -35,9 +35,11 @@ a { color: inherit; } button, input, textarea { font: inherit; }
 .connectButton.connected { height: 36px; min-height: 36px; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: var(--white); border: 1px solid var(--line); padding: 0 14px; }
 .walletGroup { justify-self: end; display: inline-flex; align-items: center; gap: 8px; }
 .navActions { justify-self: end; display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
-.networkSlot { position: absolute; top: 18px; right: 0; z-index: 4; width: 176px; height: 56px; display: flex; align-items: center; justify-content: flex-end; }
+.networkPanel { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 20px; border: 1px solid rgba(76,219,255,.18); background: rgba(255,255,255,.04); padding: 12px 14px; }
+.networkPanel .eyebrow { margin: 0; }
 .networkSelector { display: inline-flex; align-items: center; gap: 7px; margin: 0; color: var(--dim); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-.networkSelector select { min-height: 34px; max-width: 118px; border-radius: 999px; border: 1px solid var(--line); background: rgba(4,5,7,.7); color: var(--white); padding: 0 8px; font-weight: 900; text-transform: none; letter-spacing: 0; }
+.networkPanel .networkSelector > span { display: none; }
+.networkSelector select { min-height: 34px; max-width: 180px; border-radius: 999px; border: 1px solid var(--line); background: rgba(4,5,7,.7); color: var(--white); padding: 0 10px; font-weight: 900; text-transform: none; letter-spacing: 0; }
 .walletDot { width: 8px; height: 8px; border-radius: 999px; background: #42ff9a; box-shadow: 0 0 14px rgba(66,255,154,.75); }
 .disconnectButton { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
 .disconnectButton:hover { color: var(--white); border-color: rgba(255,255,255,.35); }
@@ -149,6 +151,22 @@ input:focus, textarea:focus { border-color: rgba(76,219,255,.65); box-shadow: 0 
 .toggleSwitch.on { background: rgba(76,219,255,.5); } .toggleSwitch.on::after { left: 22px; background: var(--cronos-blue); }
 .toggleSwitch:disabled { cursor: not-allowed; }
 .terminalCard, .tradePanel, .miniPanel { background: #020304; border: 1px solid rgba(76,219,255,.20); border-radius: 26px; padding: 20px; box-shadow: inset 0 0 60px rgba(76,219,255,.045); }
+.skeletonCard, .tokenLoadingPanel { min-height: 220px; }
+.skeletonCard { display: grid; gap: 16px; border-radius: 26px; padding: 24px; background: #020304; border: 1px solid rgba(76,219,255,.20); box-shadow: inset 0 0 60px rgba(76,219,255,.045); }
+.skeletonCard span, .skeletonHeader span, .skeletonHeader i, .skeletonLines span { display: block; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,255,.055), rgba(76,219,255,.16), rgba(255,255,255,.055)); background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.skeletonCard span:nth-child(1) { width: 42%; height: 44px; }
+.skeletonCard span:nth-child(2) { width: 70%; height: 18px; }
+.skeletonCard span:nth-child(3) { width: 55%; height: 18px; }
+.skeletonHeader { display: grid; grid-template-columns: 72px 1fr; gap: 16px; align-items: center; margin-bottom: 22px; }
+.skeletonHeader span { width: 72px; height: 72px; border-radius: 24px; }
+.skeletonHeader div, .skeletonLines { display: grid; gap: 12px; }
+.skeletonHeader i { height: 26px; width: 72%; }
+.skeletonHeader i + i { height: 16px; width: 44%; }
+.skeletonLines span { height: 18px; }
+.skeletonLines span:nth-child(1) { width: 90%; }
+.skeletonLines span:nth-child(2) { width: 72%; }
+.skeletonLines span:nth-child(3) { width: 58%; }
+@keyframes shimmer { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
 dl { display: grid; grid-template-columns: 170px 1fr; gap: 10px 16px; margin: 16px 0; }
 dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: anywhere; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
 
@@ -202,8 +220,7 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
 .legalSections .miniPanel p:last-child { margin-bottom: 0; }
 
 @media (max-width: 980px) {
-  .topNav { grid-template-columns: 1fr auto; width: 100%; border-radius: 24px; }
-  .networkSlot { position: static; width: 100%; height: auto; justify-content: flex-end; margin: -22px 8px 18px 0; }
+  .topNav { grid-template-columns: 1fr auto; border-radius: 24px; }
   .navLinks { display: none; }
   .hero, .createV2, .tokenDetail, .trustGrid, .opsGrid, .deployPanel, .legalPage, .filterBar, .cards, .tablesGrid { grid-template-columns: 1fr; }
   .legalHero { position: static; }
@@ -227,7 +244,7 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
   .topNav { top: 8px; grid-template-columns: 1fr; justify-items: stretch; gap: 10px; }
   .brand, .connectButton, .walletGroup, .navActions { justify-self: stretch; justify-content: center; }
   .navActions { flex-wrap: wrap; }
-  .networkSlot { justify-content: center; margin: 0 0 18px; }
+  .networkPanel { flex-direction: column; align-items: stretch; }
   .networkSelector { width: 100%; justify-content: center; }
   .networkSelector select { flex: 1; max-width: 240px; }
   h1 { font-size: 38px; line-height: 1.03; letter-spacing: -0.028em; }

@@ -75,7 +75,7 @@ export function CreatorPage() {
         <div className="miniPanel">
           <p className="eyebrow">Creator dashboard</p>
           <h2>My launches for {shortAddress(wallet.address)}.</h2>
-          <p className="lede">This page only shows launches where the indexed creator address matches your connected wallet.</p>
+          <p className="lede">This page only shows launches where the creator address matches your connected wallet.</p>
           <div className="creatorStats">
             <Metric label="tokens launched" value={myLaunches.length.toString()} />
             <Metric label="near graduation" value={nearGraduation.toString()} />
@@ -84,10 +84,10 @@ export function CreatorPage() {
         </div>
         <div className="miniPanel">
           <p className="eyebrow">Launch health</p>
-          <h2>{loading ? 'Refreshing indexed launches…' : needsMetadata ? `${needsMetadata} launch${needsMetadata === 1 ? '' : 'es'} need metadata attention.` : 'All indexed launch metadata looks complete.'}</h2>
+          <h2>{loading ? 'Refreshing launches…' : needsMetadata ? `${needsMetadata} launch${needsMetadata === 1 ? '' : 'es'} need metadata attention.` : 'All launch details look complete.'}</h2>
           <div className="queueList">
             <div><span>Wallet</span><b>{shortAddress(wallet.address)}</b><em>connected</em></div>
-            <div><span>Scope</span><b>Creator-owned tokens</b><em>Supabase indexed</em></div>
+            <div><span>Scope</span><b>Creator-owned tokens</b><em>live board</em></div>
             <div><span>Metadata policy</span><b>Name, symbol, image, links treated immutable</b><em>locked after launch</em></div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export function CreatorPage() {
         ) : (
           <div className="miniPanel">
             <h2>No launches found for this wallet yet.</h2>
-            <p className="lede">If you just created a token, it can take a moment for metadata/indexed launch data to appear.</p>
+            <p className="lede">If you just created a token, it can take a moment for the launch details to appear.</p>
             <a className="button primary" href="/create">Create a protected launch</a>
           </div>
         )}

@@ -12,7 +12,7 @@ export function TradesTable({ trades }: { trades: Trade[] }) {
           <span>{trade.amount}</span>
           <span>{trade.age}</span>
         </div>
-      )) : <p className="small">No indexed buy events yet. Contributions appear here after the indexer writes TokenBought events.</p>}
+      )) : <p className="small">No buy activity yet. Trades will appear here after the first confirmed buy.</p>}
     </div>
   );
 }
@@ -31,7 +31,7 @@ export function HoldersTable({ holders }: { holders: HolderSnapshot[] }) {
         <div className="dataNotice">
           <b>Not live yet</b>
           <span>Launch tokens are distributed on buy and redeemed on sell before graduation.</span>
-          <span>Holder snapshots appear after ERC20 transfer indexing is enabled.</span>
+          <span>Holder snapshots appear once live transfer tracking is enabled.</span>
         </div>
       )}
     </div>

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { NetworkSelector } from './NetworkSelector';
 import { WalletStatus } from './WalletStatus';
 
 const nav = [['Explore', '/'], ['Create', '/create'], ['Creator', '/creator'], ['Admin', '/admin'], ['Proof', '/proof'], ['Docs', '/docs/how-it-works']];
@@ -13,7 +12,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="navLinks">{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div>
         <WalletStatus />
       </nav>
-      <div className="networkSlot"><NetworkSelector /></div>
       {children}
       <footer className="siteFooter">
         <div>

@@ -1,6 +1,17 @@
 import type { HolderSnapshot, Trade } from '../data/types';
 import { explorerTxUrl, shortAddress } from '../wallet/chains';
 
+function tradeAge(trade: Trade) {
+  if (trade.age) return trade.age;
+  if (!trade.timestamp) return '—';
+  const elapsed = Math.max(0, Date.now() - new Date(trade.timestamp).getTime());
+  const minutes = Math.floor(elapsed / 60_000);
+  if (minutes < 60) return `${Math.max(1, minutes)}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
 function TableSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="tableSkeleton" aria-label="Loading rows">
@@ -14,11 +25,12 @@ export function TradesTable({ trades, loading = false }: { trades: Trade[]; load
     <div className="dataTable">
       <h3>Trades</h3>
       {loading && !trades.length ? <TableSkeleton /> : trades.length ? trades.map((trade) => (
-        <div key={trade.txHash ?? `${trade.wallet}${trade.age}`}>
+        <div className="tradeRow" key={trade.txHash ?? `${trade.wallet}${trade.age}`}>
           <b className={trade.side === 'Buy' ? 'buy' : 'sell'}>{trade.side}</b>
           <span title={trade.wallet}>{shortAddress(trade.wallet)}</span>
           <span>{trade.amount}</span>
-          <span>{trade.txHash ? <a href={explorerTxUrl(trade.txHash)} target="_blank" rel="noreferrer">tx ↗</a> : trade.age}</span>
+          <span>{tradeAge(trade)}</span>
+          <span>{trade.txHash ? <a className="txArrowLink" aria-label="Open trade transaction" href={explorerTxUrl(trade.txHash)} target="_blank" rel="noreferrer">↗</a> : '—'}</span>
         </div>
       )) : <p className="small">No trades yet. Buys and sells will appear here after confirmation.</p>}
     </div>

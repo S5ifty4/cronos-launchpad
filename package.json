@@ -11,6 +11,7 @@
     "web:dev": "pnpm --filter @cronos-launchpad/web dev",
     "contracts:test": "pnpm --filter @cronos-launchpad/contracts test",
     "activity:backfill": "pnpm --filter @cronos-launchpad/indexer exec node ../../scripts/backfill-token-tables.mjs",
+    "activity:check": "pnpm --filter @cronos-launchpad/indexer exec node ../../scripts/check-token-activity.mjs",
     "audit:high": "pnpm audit --audit-level high"
   },
   "pnpm": {

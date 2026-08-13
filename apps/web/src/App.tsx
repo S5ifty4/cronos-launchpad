@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import { AppShell } from './components/AppShell';
 import { HomePage } from './pages/HomePage';
 
+const WalletRoute = lazy(() => import('./components/WalletBoundary').then((module) => ({ default: module.WalletRoute })));
+
 const AdminPage = lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })));
 const CreatePage = lazy(() => import('./pages/CreatePage').then((module) => ({ default: module.CreatePage })));
 const CreatorPage = lazy(() => import('./pages/CreatorPage').then((module) => ({ default: module.CreatorPage })));
@@ -11,10 +13,10 @@ const ProofPage = lazy(() => import('./pages/ProofPage').then((module) => ({ def
 const TokenPage = lazy(() => import('./pages/TokenPage').then((module) => ({ default: module.TokenPage })));
 
 function route(pathname: string) {
-  if (pathname === '/create') return <CreatePage />;
-  if (pathname.startsWith('/token/')) return <TokenPage address={pathname.split('/').at(-1)} />;
-  if (pathname === '/creator' || pathname.startsWith('/creator/')) return <CreatorPage />;
-  if (pathname === '/admin') return <AdminPage />;
+  if (pathname === '/create') return <WalletRoute><CreatePage /></WalletRoute>;
+  if (pathname.startsWith('/token/')) return <WalletRoute><TokenPage address={pathname.split('/').at(-1)} /></WalletRoute>;
+  if (pathname === '/creator' || pathname.startsWith('/creator/')) return <WalletRoute><CreatorPage /></WalletRoute>;
+  if (pathname === '/admin') return <WalletRoute><AdminPage /></WalletRoute>;
   if (pathname === '/proof') return <ProofPage />;
   if (pathname === '/docs/risks') return <DocsPage topic="risks" />;
   if (pathname === '/docs/fees') return <DocsPage topic="fees" />;

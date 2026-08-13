@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NetworkSelector } from './NetworkSelector';
-import { WalletStatus } from './WalletStatus';
+import { WalletStatusSlot } from './WalletStatusSlot';
 
 const nav = [['Explore', '/'], ['Create', '/create'], ['Creator', '/creator'], ['Admin', '/admin'], ['Proof', '/proof'], ['Docs', '/docs/how-it-works']];
 const legal = [['Terms', '/terms'], ['Privacy', '/privacy'], ['Risk disclaimer', '/risk-disclaimer']];
@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="topNav">
         <a className="brand" href="/" aria-label="CronosForge home"><img className="brandMark" src="/assets/cronosforge-logo-inverted.png" alt="" /><span>cronos<span>forge</span></span></a>
         <div className="navLinks">{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div>
-        <div className="navActions"><NetworkSelector /><WalletStatus /></div>
+        <div className="navActions"><NetworkSelector /><WalletStatusSlot /></div>
       </nav>
       {children}
       <footer className="siteFooter">

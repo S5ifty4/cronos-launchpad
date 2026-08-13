@@ -214,6 +214,8 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
 .tablesGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
 .dataTable { border: 1px solid var(--line); border-radius: 22px; padding: 16px; background: rgba(0,0,0,.22); }
 .dataTable div, .queueList div { display: grid; grid-template-columns: .7fr 1fr .8fr .5fr; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.dataTable .tradeRow { grid-template-columns: .62fr 1fr .72fr .62fr .28fr; }
+.txArrowLink { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid rgba(76,219,255,.24); color: var(--cronos-blue); text-decoration: none; }
 .holdersTable div, .dataTable .dataNotice { grid-template-columns: .7fr 1fr 1.2fr; }
 .dataTable .dataNotice { align-items: start; }
 .tableSkeleton { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); }
@@ -275,6 +277,7 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
   .wide { grid-column: auto; }
   .dataTable { padding: 14px; }
   .dataTable div { grid-template-columns: .65fr 1.1fr .75fr .45fr; gap: 8px; align-items: center; font-size: 11px; }
+  .dataTable .tradeRow { grid-template-columns: .58fr 1fr .72fr .55fr .28fr; }
   .holdersTable div, .dataTable .dataNotice { grid-template-columns: .7fr 1.1fr .75fr; }
   .dataTable div > * { min-width: 0; }
   .dataTable a { white-space: nowrap; }

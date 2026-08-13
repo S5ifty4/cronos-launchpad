@@ -60,6 +60,14 @@ export function AdminPage() {
     ];
   }, [launches, activity]);
 
+  const activitySummary = useMemo(() => {
+    const rows = Object.values(activity);
+    const tradeCount = rows.reduce((sum, row) => sum + row.trades.length, 0);
+    const holderCount = rows.reduce((sum, row) => sum + row.holders.length, 0);
+    const latestTrade = rows.flatMap((row) => row.trades.map((trade) => trade.timestamp).filter(Boolean) as string[]).sort().at(-1);
+    return { tradeCount, holderCount, latestTrade: latestTrade ? new Date(latestTrade).toLocaleDateString() : 'none' };
+  }, [activity]);
+
   if (!wallet.isConnected || !wallet.address) {
     return (
       <section className="panel opsGrid">
@@ -108,6 +116,8 @@ export function AdminPage() {
             <Metric label="indexed launches" value={launches.length.toString()} />
             <Metric label="queue items" value={operatorQueue.filter((item) => item.state !== 'clear' && item.state !== 'none').length.toString()} />
             <Metric label="admin wallet" value={shortAddress(wallet.address)} />
+            <Metric label="tracked trades" value={activitySummary.tradeCount.toString()} />
+            <Metric label="tracked holders" value={activitySummary.holderCount.toString()} />
           </div>
         </div>
         <div className="miniPanel">
@@ -134,7 +144,7 @@ export function AdminPage() {
         <div className="miniPanel">
           <p className="eyebrow">Operator actions</p>
           <h2>Keep anti-vamp enforcement and indexing healthy.</h2>
-          <p>Admin should reserve ecosystem names, review similar-symbol reports, watch failed launch-detail writes, reconcile data freshness, and verify graduation/LP-lock proof. This control plane is gated and read-only for now.</p>
+          <p>Admin should reserve ecosystem names, review similar-symbol reports, watch failed launch-detail writes, reconcile data freshness, and verify graduation/LP-lock proof. Latest tracked trade: {activitySummary.latestTrade}. If token activity is stale, run <code>pnpm activity:check</code> then <code>pnpm activity:backfill</code> from a credentialed operator shell.</p>
           <div className="badges"><Badge tone="blue">deployer gated</Badge><Badge>read-only</Badge></div>
         </div>
       </section>

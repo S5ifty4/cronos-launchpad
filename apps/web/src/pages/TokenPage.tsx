@@ -106,7 +106,7 @@ export function TokenPage({ address }: { address?: string }) {
     if (!address) return;
     setLoading(true);
     const launchPromise = fetchLaunchByAddress(address);
-    Promise.all([launchPromise, fetchOnchainLaunchState(address)])
+    Promise.all([launchPromise, fetchOnchainLaunchState(address).catch(() => null)])
       .then(([nextLaunch, state]) => {
         if (nextLaunch?.address.toLowerCase() !== address.toLowerCase()) return;
         setIndexedLaunch(state ? withReserve(nextLaunch, state.reserveRaised, state.graduated, state.graduationTarget) : nextLaunch);

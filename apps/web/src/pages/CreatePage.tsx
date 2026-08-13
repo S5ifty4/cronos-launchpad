@@ -202,9 +202,9 @@ export function CreatePage() {
       if (publicUrl) {
         setImagePreviewUrl(publicUrl);
         setImagePublicUrl(publicUrl);
-        setImageUploadStatus('Image uploaded to Supabase Storage.');
+        setImageUploadStatus('Image uploaded.');
       } else {
-        setImageUploadStatus('Local preview only until Supabase env is configured.');
+        setImageUploadStatus('Image preview ready. Upload will finish when storage is available.');
       }
     } catch {
       setImageUploadStatus('Image upload failed; local preview is still shown.');

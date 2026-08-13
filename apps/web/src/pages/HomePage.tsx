@@ -16,7 +16,7 @@ const filterTabs: { id: ExploreTab; label: string; tone?: 'blue' | 'good' }[] = 
 ];
 
 function BoardSkeleton() {
-  return <>{Array.from({ length: 3 }).map((_, index) => <div className="skeletonCard" aria-label="Loading launches" key={index}><span /><span /><span /></div>)}</>;
+  return <>{Array.from({ length: 4 }).map((_, index) => <div className="skeletonCard launchSkeletonCard" aria-label="Loading launches" key={index}><span /><span /><span /><span /></div>)}</>;
 }
 
 export function HomePage() {
@@ -64,8 +64,7 @@ export function HomePage() {
             ))}
           </div>
         </div>
-        <div className="cards">{visibleLaunches.map((launch) => <LaunchCard launch={launch} key={launch.address} />)}</div>
-        {loading && !visibleLaunches.length && <BoardSkeleton />}
+        <div className="cards">{loading && !visibleLaunches.length ? <BoardSkeleton /> : visibleLaunches.map((launch) => <LaunchCard launch={launch} key={launch.address} />)}</div>
         {!loading && !visibleLaunches.length && <div className="miniPanel"><h2>No launches found.</h2><p className="lede">Create a launch to start filling the live board, or clear filters to view more tokens.</p><a className="button primary" href="/create">Create launch</a></div>}
       </section>
     </>

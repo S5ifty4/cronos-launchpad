@@ -39,16 +39,16 @@ export function HomePage() {
     <>
       <section className="hero">
         <div className="heroCopy">
-          <div className="statusLine"><span className="liveDot" /> CronosForge testnet MVP · VVS-first graduation</div>
+          <div className="statusLine"><span className="liveDot" /> CronosForge · protected Cronos launches</div>
           <h1>Forge Cronos meme launches with protection buyers can actually read.</h1>
-          <p className="lede">CronosForge is a Cronos-native launchpad for fair launches, protected token identity, anti-snipe windows, visible VVS graduation, and public LP-lock proof.</p>
+          <p className="lede">CronosForge is a Cronos-native launchpad for fair launches, protected token identity, anti-snipe windows, transparent graduation, and public LP-lock proof.</p>
           <div className="heroActions"><a href="/create" className="button primary">Start protected launch</a><a href="#board" className="button secondary">Explore runners</a></div>
         </div>
         <aside className="heroBoard" aria-label="Launchpad summary">
           <div className="heroLogoLockup"><img src="/assets/cronosforge-logo-inverted.png" alt="CronosForge rocket launch logo" /><span>CronosForge</span></div>
-          <div className="tickerTape"><span>Cronos Testnet</span><span>Mainnet coming soon</span><span>Manual graduation</span></div>
+          <div className="tickerTape"><span>Cronos Testnet live</span><span>Mainnet planned</span><span>Creator graduation</span></div>
           <div className="statsGrid"><Metric label="launches live" value={loading ? '…' : String(launches.length)} /><Metric label="top progress" value={`${leadingProgress}%`} /><Metric label="LP lock default" value="180d" /></div>
-          <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Protected token identity with on-chain duplicate and reserved-name checks.</li><li>Launches stay testnet-only until mainnet contracts are configured.</li><li>Graduation is a creator/admin transaction before automated keepers are enabled.</li></ul></div>
+          <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Protected token identity with on-chain duplicate and reserved-name checks.</li><li>Currently live on Cronos Testnet, with mainnet support planned after production contracts are ready.</li><li>Graduation is triggered by the creator or operator when the reserve target is reached.</li></ul></div>
         </aside>
       </section>
 
@@ -66,7 +66,7 @@ export function HomePage() {
         </div>
         <div className="cards">{visibleLaunches.map((launch) => <LaunchCard launch={launch} key={launch.address} />)}</div>
         {loading && !visibleLaunches.length && <BoardSkeleton />}
-        {!loading && !visibleLaunches.length && <div className="miniPanel"><h2>No launches found.</h2><p className="lede">Create a Cronos Testnet launch to start filling the live board, or clear filters to view earlier test launches.</p><a className="button primary" href="/create">Create first testnet launch</a></div>}
+        {!loading && !visibleLaunches.length && <div className="miniPanel"><h2>No launches found.</h2><p className="lede">Create a launch to start filling the live board, or clear filters to view more tokens.</p><a className="button primary" href="/create">Create launch</a></div>}
       </section>
     </>
   );

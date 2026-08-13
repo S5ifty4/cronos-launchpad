@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <footer className="siteFooter">
         <div>
           <strong>CronosForge</strong>
-          <p>Testnet MVP for protected Cronos launches. Not financial advice; verify every wallet prompt and token source before signing.</p>
+          <p>Protected Cronos launches. Not financial advice; verify every wallet prompt and token source before signing.</p>
         </div>
         <div className="footerLinks">
           {legal.map(([label, href]) => <a key={href} href={href}>{label}</a>)}

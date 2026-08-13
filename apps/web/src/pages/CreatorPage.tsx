@@ -61,7 +61,7 @@ export function CreatorPage() {
           <h2>Launch health, links, and graduation readiness.</h2>
           <div className="queueList">
             <div><span>My launches</span><b>Filtered by creator wallet</b><em>private view</em></div>
-            <div><span>Metadata health</span><b>Image/social/description status</b><em>read-only</em></div>
+            <div><span>Launch details</span><b>Image, links, and description status</b><em>read-only</em></div>
             <div><span>Actions</span><b>Copy token links, open explorer</b><em>safe ops</em></div>
           </div>
         </div>
@@ -88,7 +88,7 @@ export function CreatorPage() {
           <div className="queueList">
             <div><span>Wallet</span><b>{shortAddress(wallet.address)}</b><em>connected</em></div>
             <div><span>Scope</span><b>Creator-owned tokens</b><em>live board</em></div>
-            <div><span>Metadata policy</span><b>Name, symbol, image, links treated immutable</b><em>locked after launch</em></div>
+            <div><span>Launch details</span><b>Name, symbol, image, links treated permanent</b><em>locked after launch</em></div>
           </div>
         </div>
       </section>
@@ -110,7 +110,7 @@ export function CreatorPage() {
         <section className="panel opsGrid">
           <div className="miniPanel">
             <p className="eyebrow">Creator actions</p>
-            <h2>Safe per-launch actions for MVP.</h2>
+            <h2>Per-launch status and actions.</h2>
             <div className="queueList">
               {myLaunches.slice(0, 4).map((launch) => (
                 <div key={launch.address}>
@@ -122,9 +122,9 @@ export function CreatorPage() {
             </div>
           </div>
           <div className="miniPanel">
-            <p className="eyebrow">Immutability note</p>
-            <h2>Metadata is shown as launch health, not an edit surface.</h2>
-            <p>For the MVP, Creator is read-only because the create form warns that name, ticker, image, and launch links should be treated as immutable after launch.</p>
+            <p className="eyebrow">Launch details</p>
+            <h2>Public launch details are treated as permanent.</h2>
+            <p>Creator currently shows launch health and links rather than post-launch editing. Treat the token name, ticker, image, and launch links as final before signing creation.</p>
             <div className="badges"><Badge>No post-launch edits</Badge><Badge tone="blue">Wallet scoped</Badge></div>
           </div>
         </section>

@@ -79,20 +79,20 @@ export function CreatePage() {
   const txKey = useMemo(() => `${txPreview.to ?? ''}:${txPreview.value.toString()}:${txPreview.data}`, [txPreview.to, txPreview.value, txPreview.data]);
   const submittedThisConfig = Boolean(txHash && submittedTxKey === txKey && txStatus !== 'failed');
   const duplicateBlocked = identity.status === 'blocked';
-  const readinessMissing = [...txPreview.missing, ...(identityLoading ? ['live duplicate preflight'] : []), ...(duplicateBlocked ? identity.reasons : [])];
+  const readinessMissing = [...txPreview.missing, ...(identityLoading ? ['identity check'] : []), ...(duplicateBlocked ? identity.reasons : [])];
   const txReadiness = submittedThisConfig
     ? txStatus === 'confirmed'
       ? 'confirmed — opening token page'
       : txStatus === 'confirming'
-        ? 'submitted — waiting for Cronos confirmation'
-        : 'submitted — waiting for wallet/network confirmation'
+        ? 'submitted — waiting for network confirmation'
+        : 'submitted — waiting for wallet confirmation'
     : txPreview.ready && !identityLoading && !duplicateBlocked ? 'ready to sign' : `waiting: ${readinessMissing.join(', ')}`;
   const submitDisabled = !txPreview.ready || identityLoading || duplicateBlocked || !wallet.isCorrectChain || wallet.isPending || submittedThisConfig;
   const submitLabel = submittedThisConfig
     ? txStatus === 'confirmed'
       ? 'Launch confirmed'
       : 'Launch submitted'
-    : wallet.isPending ? 'Submitting…' : 'Submit create tx';
+    : wallet.isPending ? 'Submitting…' : 'Create launch';
   const previewSocials = [
     socialUrl(websiteLink) && { platform: 'website' as const, url: socialUrl(websiteLink)! },
     socialUrl(xLink) && { platform: 'x' as const, url: socialUrl(xLink)! },
@@ -120,11 +120,11 @@ export function CreatePage() {
   const handleSend = async () => {
     if (submittedThisConfig) return;
     if (identityLoading) {
-      setTxError('Still refreshing live duplicate preflight. Please wait a moment before signing.');
+      setTxError('Still checking token identity. Please wait a moment before signing.');
       return;
     }
     if (duplicateBlocked) {
-      setTxError(`Preflight blocked this launch: ${identity.reasons.join(', ')}`);
+      setTxError(`Identity check blocked this launch: ${identity.reasons.join(', ')}`);
       return;
     }
     setTxError(undefined);
@@ -215,14 +215,14 @@ export function CreatePage() {
     <section className="panel createV2">
       <div>
         <p className="eyebrow">Create token</p>
-        <h2>Guided launch form with immutable-data warnings.</h2>
-        <p>Name, ticker, image, and launch links should be treated as immutable after launch. The preflight checks reserved Cronos names, duplicate identities, homoglyph swaps, and near-matches before wallet signing.</p>
+        <h2>Create a protected launch.</h2>
+        <p>Name, ticker, image, and launch links should be treated as permanent after launch. CronosForge checks reserved names, duplicate identities, lookalikes, and near-matches before wallet signing.</p>
         <div className="formGrid">
           <label>Token name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
           <label>Symbol<input value={symbol} onChange={(event) => setSymbol(event.target.value)} /></label>
           <label className="wide imageUploadLabel">Token image<span className="fieldHelp">Upload square artwork for the token card and detail page.</span><span className="filePicker"><span className="button secondary filePickerButton">Choose image</span><span className="filePickerName">{imageFileName || 'No image selected'}</span><input className="srOnly" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleImageChange(event.target.files?.[0])} /></span>{imageUploadStatus && <span className="fieldHelp">{imageUploadStatus}</span>}</label>
           <label className="wide">Description<textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
-          <label>Graduation target<span className="fieldHelp">CRO reserve needed before VVS graduation.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
+          <label>Graduation target<span className="fieldHelp">CRO reserve needed before liquidity is seeded.</span><input inputMode="decimal" value={graduationTarget} onChange={(event) => setGraduationTarget(event.target.value)} /></label>
           <label>Initial buy CRO<span className="fieldHelp">Optional first buy sent with token creation.</span><input inputMode="decimal" value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} /></label>
           <label>Website<input type="url" value={websiteLink} onChange={(event) => setWebsiteLink(event.target.value)} /></label>
           <label>X<input type="url" value={xLink} onChange={(event) => setXLink(event.target.value)} /></label>
@@ -234,19 +234,19 @@ export function CreatePage() {
             label="Graduation enabled at reserve target"
             enabled
             disabled
-            info="When the CRO reserve reaches the graduation target, the launch becomes eligible to graduate into the configured VVS route and send LP into the timelock vault. v0 does not fully auto-submit that transaction yet; a graduation transaction still has to be called after the target is met."
+            info="When the CRO reserve reaches the graduation target, the launch becomes eligible to seed liquidity and lock LP. A creator or operator still submits the graduation transaction after the target is met."
           />
           <ToggleRow
             label="Anti-snipe launch window"
             enabled={antiBotEnabled}
             onChange={setAntiBotEnabled}
-            info="Optional first-10-minute buy-limit window. Current v0 calldata uses 600 seconds: first 2 minutes cap buys at 5% of the base limit, minutes 2–5 at 15%, minutes 5–10 at 35%, then the full base limit."
+            info="Optional first-10-minute buy-limit window. The limit starts strict and relaxes over the first few minutes to make early sniping harder."
           />
           <ToggleRow
             label="Token tax"
             enabled={false}
             disabled
-            info="Token tax is disabled for v0. CronosForge launches are currently no-tax so buyers do not need to reason about hidden transfer fees."
+            info="CronosForge launches are currently no-tax so buyers do not need to account for hidden transfer fees."
           />
         </div>
       </div>
@@ -260,13 +260,13 @@ export function CreatePage() {
           <h3>Preflight + cost</h3>
           <Badge tone={identity.status === 'available' ? 'good' : identity.status === 'warn' ? 'warn' : 'bad'}>{identity.status}</Badge>
           <dl>
-            <dt>Normalized name</dt><dd>{identity.normalizedName}</dd>
-            <dt>Normalized symbol</dt><dd>{identity.normalizedSymbol}</dd>
+            <dt>Checked name</dt><dd>{identity.normalizedName}</dd>
+            <dt>Checked symbol</dt><dd>{identity.normalizedSymbol}</dd>
             <dt>Reasons</dt><dd>{identity.reasons.length ? identity.reasons.join(', ') : 'None'}</dd>
             <dt>Anti-snipe cap</dt><dd>{currentLimit ? `${currentLimit} CRO max buy at minute 3` : 'Disabled for this launch'}</dd>
             <dt>Estimated total</dt><dd>{totalCost.toLocaleString()} CRO incl. launch fee</dd>
-            <dt>Tx readiness</dt><dd>{txReadiness}</dd>
-            <dt>Calldata</dt><dd>{txPreview.data.slice(0, 18)}…{txPreview.data.slice(-10)}</dd>
+            <dt>Ready to sign</dt><dd>{txReadiness}</dd>
+            <dt>Contract call</dt><dd>{txPreview.ready ? 'Ready' : 'Waiting for required fields'}</dd>
           </dl>
           <button className="button primary" disabled={submitDisabled} onClick={handleSend}>{submitLabel}</button>
           {wallet.error && <p className="small">Wallet: {wallet.error}</p>}

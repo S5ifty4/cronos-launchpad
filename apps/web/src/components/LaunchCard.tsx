@@ -18,7 +18,7 @@ function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, address: string) {
 }
 
 function cleanMetric(value: string) {
-  return value.toLowerCase().includes('indexed') ? 'Pending' : value;
+  return value.toLowerCase().includes('indexed') ? 'pending' : value;
 }
 
 export function LaunchCard({ launch }: { launch: Launch }) {
@@ -34,7 +34,7 @@ export function LaunchCard({ launch }: { launch: Launch }) {
       </div>
       <div className="cardFooterStack">
         <ProgressBar value={launch.progress} />
-        <div className="cardMetrics"><span>{launch.progress}% to graduation</span><span>{cleanMetric(launch.marketCap)} mcap</span><span>{cleanMetric(launch.volume24h)} vol</span></div>
+        <div className="cardMetrics"><span>{launch.progress}% to graduation</span><span>Market cap {cleanMetric(launch.marketCap)}</span><span>Volume {cleanMetric(launch.volume24h)}</span></div>
         <div className="badges">
           <Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge>
           {launch.taxBips === 0 && <Badge>No tax</Badge>}

@@ -114,36 +114,46 @@ export function TokenPage({ address }: { address?: string }) {
       .catch(() => undefined)
       .finally(() => setLoading(false));
     setTradesLoading(true);
-    Promise.allSettled([
-      fetchLaunchTrades(address),
-      launchPromise.then(async (nextLaunch) => {
-        const factory = (nextLaunch?.factoryAddress as `0x${string}` | undefined) ?? await resolveFactoryAddressFromTx(nextLaunch?.createdTx);
-        const fromBlock = nextLaunch?.createdBlock ? BigInt(Math.max(0, nextLaunch.createdBlock - 5)) : 0n;
-        return fetchOnchainTradeEvents(address, fromBlock, factory);
-      }),
-    ])
-      .then(([indexedResult, onchainResult]) => {
-        const indexedTrades = indexedResult.status === 'fulfilled' ? indexedResult.value : [];
-        const onchainTrades = onchainResult.status === 'fulfilled' ? onchainResult.value : [];
-        setTrades(onchainTrades.length ? onchainTrades : indexedTrades);
+    fetchLaunchTrades(address)
+      .then((indexedTrades) => {
+        if (indexedTrades.length) {
+          setTrades(indexedTrades);
+          setTradesLoading(false);
+          return;
+        }
+        return launchPromise
+          .then(async (nextLaunch) => {
+            const factory = (nextLaunch?.factoryAddress as `0x${string}` | undefined) ?? await resolveFactoryAddressFromTx(nextLaunch?.createdTx);
+            const fromBlock = nextLaunch?.createdBlock ? BigInt(Math.max(0, nextLaunch.createdBlock - 5)) : 0n;
+            return fetchOnchainTradeEvents(address, fromBlock, factory);
+          })
+          .then(setTrades)
+          .finally(() => setTradesLoading(false));
       })
-      .catch(() => setTrades([]))
-      .finally(() => setTradesLoading(false));
+      .catch(() => {
+        setTrades([]);
+        setTradesLoading(false);
+      });
     setHoldersLoading(true);
-    Promise.allSettled([
-      fetchLaunchHolders(address),
-      launchPromise.then((nextLaunch) => {
-        const fromBlock = nextLaunch?.createdBlock ? BigInt(Math.max(0, nextLaunch.createdBlock - 5)) : 0n;
-        return fetchOnchainHolders(address, fromBlock);
-      }),
-    ])
-      .then(([indexedResult, onchainResult]) => {
-        const indexedHolders = indexedResult.status === 'fulfilled' ? indexedResult.value : [];
-        const onchainHolders = onchainResult.status === 'fulfilled' ? onchainResult.value : [];
-        setHolders(onchainHolders.length ? onchainHolders : indexedHolders);
+    fetchLaunchHolders(address)
+      .then((indexedHolders) => {
+        if (indexedHolders.length) {
+          setHolders(indexedHolders);
+          setHoldersLoading(false);
+          return;
+        }
+        return launchPromise
+          .then((nextLaunch) => {
+            const fromBlock = nextLaunch?.createdBlock ? BigInt(Math.max(0, nextLaunch.createdBlock - 5)) : 0n;
+            return fetchOnchainHolders(address, fromBlock);
+          })
+          .then(setHolders)
+          .finally(() => setHoldersLoading(false));
       })
-      .catch(() => setHolders([]))
-      .finally(() => setHoldersLoading(false));
+      .catch(() => {
+        setHolders([]);
+        setHoldersLoading(false);
+      });
   }, [address]);
 
   useEffect(() => {

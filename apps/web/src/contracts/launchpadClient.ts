@@ -242,7 +242,7 @@ export async function fetchOnchainLaunchState(tokenAddress: string) {
 export async function fetchOnchainHolders(tokenAddress: string, fromBlock = 0n) {
   if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];
   const latest = await rpcClient.getBlockNumber();
-  const window = 50000n;
+  const window = 175000n;
   const start = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
   const event = launchTokenAbi.find((entry) => entry.type === 'event' && entry.name === 'Transfer') as Extract<(typeof launchTokenAbi)[number], { type: 'event' }>;
   const logs = [];
@@ -289,11 +289,11 @@ export async function fetchOnchainHolders(tokenAddress: string, fromBlock = 0n) 
     });
 }
 
-export async function fetchOnchainTradeEvents(tokenAddress: string, fromBlock = 0n) {
-  const factory = addresses.cronosTestnet.launchpadFactory;
+export async function fetchOnchainTradeEvents(tokenAddress: string, fromBlock = 0n, factoryAddress?: `0x${string}`) {
+  const factory = factoryAddress ?? addresses.cronosTestnet.launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];
   const latest = await rpcClient.getBlockNumber();
-  const window = 12000n;
+  const window = 175000n;
   const start = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
   const events = ['TokenBought', 'TokenSold'].map((name) => launchpadFactoryAbi.find((entry) => entry.type === 'event' && entry.name === name) as Extract<(typeof launchpadFactoryAbi)[number], { type: 'event' }>);
   const logs = [];
@@ -344,6 +344,12 @@ export async function fetchOnchainTradeEvents(tokenAddress: string, fromBlock = 
       return null;
     })
     .filter((trade): trade is NonNullable<typeof trade> => Boolean(trade));
+}
+
+export async function resolveFactoryAddressFromTx(txHash?: string) {
+  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) return undefined;
+  const tx = await rpcClient.getTransaction({ hash: txHash as `0x${string}` }).catch(() => null);
+  return tx?.to ?? undefined;
 }
 
 export const fetchOnchainBuyEvents = fetchOnchainTradeEvents;

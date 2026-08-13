@@ -25,6 +25,8 @@ type LaunchRow = {
   reserve_raised_wei: string | number;
   anti_bot_enabled: boolean;
   tax_bips: number;
+  created_tx: string | null;
+  created_block: string | number | null;
   created_at: string;
 };
 
@@ -105,6 +107,8 @@ export function mapLaunchRow(row: LaunchRow): Launch {
     socials: socials(row),
     color: '#4CDBFF',
     imageUrl: row.image_url ?? undefined,
+    createdBlock: row.created_block ? Number(row.created_block) : undefined,
+    createdTx: row.created_tx ?? undefined,
   };
 }
 
@@ -112,7 +116,7 @@ export async function fetchSupabaseLaunches() {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('launches')
-    .select('chain_id,token_address,creator_address,name,symbol,description,image_url,x_url,website_url,discord_url,telegram_url,status,graduation_target_wei,reserve_raised_wei,anti_bot_enabled,tax_bips,created_at')
+    .select('chain_id,token_address,creator_address,name,symbol,description,image_url,x_url,website_url,discord_url,telegram_url,status,graduation_target_wei,reserve_raised_wei,anti_bot_enabled,tax_bips,created_tx,created_block,created_at')
     .order('created_at', { ascending: false });
   if (error || !data?.length) return null;
   return data.map((row) => mapLaunchRow(row as LaunchRow));
@@ -122,7 +126,7 @@ export async function fetchSupabaseLaunchByAddress(address: string) {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('launches')
-    .select('chain_id,token_address,creator_address,name,symbol,description,image_url,x_url,website_url,discord_url,telegram_url,status,graduation_target_wei,reserve_raised_wei,anti_bot_enabled,tax_bips,created_at')
+    .select('chain_id,token_address,creator_address,name,symbol,description,image_url,x_url,website_url,discord_url,telegram_url,status,graduation_target_wei,reserve_raised_wei,anti_bot_enabled,tax_bips,created_tx,created_block,created_at')
     .eq('token_address', address.toLowerCase())
     .maybeSingle();
   if (error || !data) return null;

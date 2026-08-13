@@ -6,7 +6,7 @@ import { ReserveChart } from '../components/ReserveChart';
 import { SocialLinks } from '../components/SocialLinks';
 import { TokenGlyph } from '../components/TokenGlyph';
 import { TradePanel } from '../components/TradePanel';
-import { fetchOnchainHolders, fetchOnchainLaunchState, fetchOnchainTradeEvents } from '../contracts/launchpadClient';
+import { fetchOnchainHolders, fetchOnchainLaunchState, fetchOnchainTradeEvents, resolveFactoryAddressFromTx } from '../contracts/launchpadClient';
 import { fetchLaunchByAddress, fetchLaunchHolders, fetchLaunchTrades, getLaunches } from '../data/api';
 import type { HolderSnapshot, Launch, Trade } from '../data/types';
 import { explorerAddressUrl, shortAddress } from '../wallet/chains';
@@ -105,7 +105,8 @@ export function TokenPage({ address }: { address?: string }) {
   const refreshTokenData = useCallback(() => {
     if (!address) return;
     setLoading(true);
-    Promise.all([fetchLaunchByAddress(address), fetchOnchainLaunchState(address)])
+    const launchPromise = fetchLaunchByAddress(address);
+    Promise.all([launchPromise, fetchOnchainLaunchState(address)])
       .then(([nextLaunch, state]) => {
         if (nextLaunch?.address.toLowerCase() !== address.toLowerCase()) return;
         setIndexedLaunch(state ? withReserve(nextLaunch, state.reserveRaised, state.graduated, state.graduationTarget) : nextLaunch);
@@ -113,7 +114,14 @@ export function TokenPage({ address }: { address?: string }) {
       .catch(() => undefined)
       .finally(() => setLoading(false));
     setTradesLoading(true);
-    Promise.allSettled([fetchLaunchTrades(address), fetchOnchainTradeEvents(address)])
+    Promise.allSettled([
+      fetchLaunchTrades(address),
+      launchPromise.then(async (nextLaunch) => {
+        const factory = (nextLaunch?.factoryAddress as `0x${string}` | undefined) ?? await resolveFactoryAddressFromTx(nextLaunch?.createdTx);
+        const fromBlock = nextLaunch?.createdBlock ? BigInt(Math.max(0, nextLaunch.createdBlock - 5)) : 0n;
+        return fetchOnchainTradeEvents(address, fromBlock, factory);
+      }),
+    ])
       .then(([indexedResult, onchainResult]) => {
         const indexedTrades = indexedResult.status === 'fulfilled' ? indexedResult.value : [];
         const onchainTrades = onchainResult.status === 'fulfilled' ? onchainResult.value : [];
@@ -122,7 +130,13 @@ export function TokenPage({ address }: { address?: string }) {
       .catch(() => setTrades([]))
       .finally(() => setTradesLoading(false));
     setHoldersLoading(true);
-    Promise.allSettled([fetchLaunchHolders(address), fetchOnchainHolders(address)])
+    Promise.allSettled([
+      fetchLaunchHolders(address),
+      launchPromise.then((nextLaunch) => {
+        const fromBlock = nextLaunch?.createdBlock ? BigInt(Math.max(0, nextLaunch.createdBlock - 5)) : 0n;
+        return fetchOnchainHolders(address, fromBlock);
+      }),
+    ])
       .then(([indexedResult, onchainResult]) => {
         const indexedHolders = indexedResult.status === 'fulfilled' ? indexedResult.value : [];
         const onchainHolders = onchainResult.status === 'fulfilled' ? onchainResult.value : [];

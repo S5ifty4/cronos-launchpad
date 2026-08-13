@@ -24,6 +24,9 @@ export type Launch = {
   socials: SocialLink[];
   color: string;
   imageUrl?: string;
+  createdBlock?: number;
+  createdTx?: string;
+  factoryAddress?: string;
 };
 
 export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string; txHash?: string; blockNumber?: number; timestamp?: string; croAmountWei?: string; reserveRaisedWei?: string };

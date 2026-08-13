@@ -78,11 +78,11 @@ describe('launchpad web model', () => {
     expect(envAddress('')).toBeUndefined();
   });
 
-  it('uses official Cronos testnet and VVS testnet addresses', () => {
+  it('uses Cronos testnet and env-configurable graduation router addresses', () => {
     expect(cronosTestnet.id).toBe(338);
     expect(cronosTestnet.rpcUrls).toContain('https://evm-t3.cronos.org/');
     expect(cronosTestnet.blockExplorerUrls).toContain('https://explorer.cronos.org/testnet');
-    expect(vvsTestnetContracts.smartRouter).toBe('0xC74C960708f043E04a84038c6D1136EA7Fcb16a1');
+    expect(vvsTestnetContracts.smartRouter).toMatch(/^0x[a-fA-F0-9]{40}$/);
     expect(vvsTestnetContracts.wcro).toBe('0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4');
   });
 

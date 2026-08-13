@@ -233,6 +233,56 @@ export async function fetchOnchainLaunchState(tokenAddress: string) {
   };
 }
 
+export async function fetchOnchainHolders(tokenAddress: string, fromBlock = 0n) {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];
+  const latest = await rpcClient.getBlockNumber();
+  const window = 50000n;
+  const start = fromBlock > 0n ? fromBlock : latest > window ? latest - window : 0n;
+  const event = launchTokenAbi.find((entry) => entry.type === 'event' && entry.name === 'Transfer') as Extract<(typeof launchTokenAbi)[number], { type: 'event' }>;
+  const logs = [];
+  for (let chunkStart = start; chunkStart <= latest; chunkStart += 1900n) {
+    const chunkEnd = chunkStart + 1899n > latest ? latest : chunkStart + 1899n;
+    logs.push(...await rpcClient.getLogs({
+      address: tokenAddress as `0x${string}`,
+      event,
+      fromBlock: chunkStart,
+      toBlock: chunkEnd,
+    }));
+  }
+  if (!logs.length) return [];
+  const balances = new Map<string, bigint>();
+  for (const log of logs) {
+    const decoded = decodeEventLog({ abi: launchTokenAbi, data: log.data, topics: log.topics });
+    if (decoded.eventName !== 'Transfer') continue;
+    const from = decoded.args.from.toLowerCase();
+    const to = decoded.args.to.toLowerCase();
+    const value = decoded.args.value;
+    if (from !== zeroAddress) balances.set(from, (balances.get(from) ?? 0n) - value);
+    if (to !== zeroAddress) balances.set(to, (balances.get(to) ?? 0n) + value);
+  }
+  const totalSupply = await rpcClient.readContract({
+    address: tokenAddress as `0x${string}`,
+    abi: launchTokenAbi,
+    functionName: 'totalSupply',
+  }).catch(() => 0n);
+  const factoryAddresses = new Set([
+    ...phase2FactoryAllowlist.map((address) => address.toLowerCase()),
+    addresses.cronosTestnet.launchpadFactory?.toLowerCase(),
+  ].filter(Boolean));
+  return [...balances.entries()]
+    .filter(([wallet, balance]) => wallet !== zeroAddress && balance > 0n)
+    .sort((a, b) => a[1] === b[1] ? 0 : a[1] > b[1] ? -1 : 1)
+    .slice(0, 8)
+    .map(([wallet, balance]) => {
+      const share = totalSupply > 0n ? Number((balance * 10000n) / totalSupply) / 100 : 0;
+      return {
+        wallet,
+        share: `${share.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`,
+        note: factoryAddresses.has(wallet) ? 'launch reserve' : 'holder',
+      };
+    });
+}
+
 export async function fetchOnchainTradeEvents(tokenAddress: string, fromBlock = 0n) {
   const factory = addresses.cronosTestnet.launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return [];

@@ -6,7 +6,7 @@ import { ReserveChart } from '../components/ReserveChart';
 import { SocialLinks } from '../components/SocialLinks';
 import { TokenGlyph } from '../components/TokenGlyph';
 import { TradePanel } from '../components/TradePanel';
-import { fetchOnchainLaunchState, fetchOnchainTradeEvents } from '../contracts/launchpadClient';
+import { fetchOnchainHolders, fetchOnchainLaunchState, fetchOnchainTradeEvents } from '../contracts/launchpadClient';
 import { fetchLaunchByAddress, fetchLaunchHolders, fetchLaunchTrades, getLaunches } from '../data/api';
 import type { HolderSnapshot, Launch, Trade } from '../data/types';
 import { cronosTestnet, shortAddress } from '../wallet/chains';
@@ -88,6 +88,11 @@ export function TokenPage({ address }: { address?: string }) {
       })
       .catch(() => undefined);
     fetchLaunchHolders(address).then(setHolders).catch(() => setHolders([]));
+    fetchOnchainHolders(address)
+      .then((onchainHolders) => {
+        if (onchainHolders.length) setHolders(onchainHolders);
+      })
+      .catch(() => undefined);
   }, [address]);
 
   useEffect(() => {

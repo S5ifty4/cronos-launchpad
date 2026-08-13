@@ -29,9 +29,9 @@ export function HoldersTable({ holders }: { holders: HolderSnapshot[] }) {
         </div>
       )) : (
         <div className="dataNotice">
-          <b>Not live yet</b>
-          <span>Launch tokens are distributed on buy and redeemed on sell before graduation.</span>
-          <span>Holder snapshots appear once live transfer tracking is enabled.</span>
+          <b>No holders yet</b>
+          <span>Holder balances appear after token transfers are confirmed.</span>
+          <span>The launch reserve is shown separately when it still holds unsold supply.</span>
         </div>
       )}
     </div>

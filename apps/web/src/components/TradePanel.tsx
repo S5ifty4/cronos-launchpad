@@ -52,19 +52,19 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
   const canGraduate = targetReached && graduationCompatible && !launch.status.includes('Graduated') && isCreator && graduateTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && !busy;
   const readiness = targetReached
     ? launch.status === 'Graduated'
-      ? 'Graduated. Trading is closed and LP has been seeded.'
+      ? 'Graduated. Trading is closed.'
       : isCreator
         ? graduationCompatibility?.compatible === false
           ? graduationCompatibility.reason
           : graduationCompatibility === null
-            ? 'Checking graduation route compatibility…'
-            : 'Target reached. Creator can graduate this launch when ready.'
-        : 'Target reached. Waiting for the creator to run graduation.'
+            ? 'Checking graduation route…'
+            : 'Ready to graduate.'
+        : 'Target reached. Waiting for creator.'
     : !wallet.isConnected
-      ? 'Connect wallet to trade this launch.'
+      ? 'Connect wallet to trade.'
       : !wallet.isCorrectChain
         ? 'Switch to Cronos Testnet.'
-        : activeTx.ready ? (mode === 'buy' ? 'Ready to buy launch tokens.' : 'Ready to sell launch tokens back to reserve.') : `Waiting: ${activeTx.missing.join(', ')}`;
+        : activeTx.ready ? 'Ready.' : `Waiting: ${activeTx.missing.join(', ')}`;
 
   const submitTrade = async () => {
     if (!canTrade) return;
@@ -139,16 +139,15 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
       <label className="tradeAmountLabel">{mode === 'buy' ? 'CRO amount' : `${launch.symbol} amount`}<input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={targetReached} /></label>
       <div className="amountChips">{['1', '5', '10', '25'].map((nextAmount) => <button type="button" key={nextAmount} onClick={() => setAmount(nextAmount)} disabled={targetReached}>{nextAmount}</button>)}</div>
       <dl>
-        <dt>Action</dt><dd>{targetReached ? 'Graduate launch' : mode === 'buy' ? 'Buy launch tokens' : 'Sell launch tokens'}</dd>
-        <dt>Pricing</dt><dd>Fixed v1 curve: target reserve buys 50% supply</dd>
-        <dt>Creator</dt><dd title={launch.creator}>{shortAddress(launch.creator)}</dd>
-        <dt>LP status</dt><dd>{launch.status === 'Graduated' ? 'Seeded' : targetReached && graduationCompatibility?.compatible === false ? 'Route update needed' : targetReached ? 'Ready for graduation' : 'Locks on graduation'}</dd>
-        <dt>Readiness</dt><dd>{readiness}</dd>
+        <dt>Curve</dt><dd>Fixed launch curve</dd>
+        <dt>Progress</dt><dd>{launch.reserveRaised} / {launch.graduationTarget}</dd>
+        <dt>LP</dt><dd>{launch.status === 'Graduated' ? 'Seeded' : targetReached && graduationCompatibility?.compatible === false ? 'Route update needed' : targetReached ? 'Ready to seed' : 'Seeds at graduation'}</dd>
+        <dt>Status</dt><dd>{readiness}</dd>
       </dl>
       <button className="button primary" disabled={!canTrade} onClick={submitTrade} type="button">
         {targetReached ? 'Trading closed' : status === 'approving' ? 'Approving…' : status === 'simulating' ? 'Checking tx…' : status === 'submitted' ? 'Waiting for confirmation…' : mode === 'buy' ? 'Buy tokens' : 'Sell tokens'}
       </button>
-      <p className="small">Launch trading supports token output on buy, sell redemption, and WCRO-compatible graduation. Earlier test launches may have limited actions.</p>
+      <p className="small">Trades execute on Cronos Testnet. Review wallet prompts before signing.</p>
       {txHash && <p className="small">Tx: <a href={explorerTxUrl(txHash, wallet.chainId)} target="_blank" rel="noreferrer">{shortAddress(txHash)} ↗</a></p>}
       {status === 'confirmed' && <p className="small">{targetReached ? 'Graduation' : mode === 'buy' ? 'Buy' : 'Sell'} confirmed.</p>}
       {error && <p className="small">Wallet: {error}</p>}

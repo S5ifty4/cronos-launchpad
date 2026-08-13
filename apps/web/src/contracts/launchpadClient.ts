@@ -20,6 +20,11 @@ const oneBillion = parseEther('1000000000');
 const oneHundredEightyDays = 180n * 24n * 60n * 60n;
 const cronosTestnetRpc = 'https://evm-t3.cronos.org/';
 const defaultWrappedNative = '0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4' as const;
+const phase2FactoryAllowlist = [
+  '0xf88f79dead20f3932cb21590d3b29bec4e0336bb',
+  '0xd47e7cd000beb7ba9cd569c5c7e95732e4511ee2',
+  '0xfa79f4a16b1d47589739a8a9e8ae53829e8d1a01',
+] as const;
 const rpcClient = createPublicClient({ transport: http(cronosTestnetRpc) });
 
 function normalizeNumber(value: string) {
@@ -166,9 +171,7 @@ export function prepareSellTokenTx({ tokenAddress, amountTokens, minCroOut = '0'
   };
 }
 
-export async function isCurrentPhase2LaunchToken(tokenAddress: string) {
-  const factory = addresses.cronosTestnet.launchpadFactory;
-  if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return false;
+async function hasLaunchConfigAtFactory(tokenAddress: string, factory: `0x${string}`) {
   try {
     const config = await rpcClient.readContract({
       address: factory,
@@ -182,11 +185,23 @@ export async function isCurrentPhase2LaunchToken(tokenAddress: string) {
   }
 }
 
-export async function filterCurrentPhase2Launches<T extends { address: string }>(launches: T[]) {
-  if (!addresses.cronosTestnet.launchpadFactory) return [];
-  const checks = await Promise.all(launches.map(async (launch) => ({ launch, include: await isCurrentPhase2LaunchToken(launch.address) })));
+export async function isPhase2OrNewerLaunchToken(tokenAddress: string) {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return false;
+  const factories = new Set<string>(phase2FactoryAllowlist.map((factory) => factory.toLowerCase()));
+  if (addresses.cronosTestnet.launchpadFactory) factories.add(addresses.cronosTestnet.launchpadFactory.toLowerCase());
+  for (const factory of factories) {
+    if (await hasLaunchConfigAtFactory(tokenAddress, factory as `0x${string}`)) return true;
+  }
+  return false;
+}
+
+export async function filterPhase2OrNewerLaunches<T extends { address: string }>(launches: T[]) {
+  const checks = await Promise.all(launches.map(async (launch) => ({ launch, include: await isPhase2OrNewerLaunchToken(launch.address) })));
   return checks.filter((check) => check.include).map((check) => check.launch);
 }
+
+export const isCurrentPhase2LaunchToken = isPhase2OrNewerLaunchToken;
+export const filterCurrentPhase2Launches = filterPhase2OrNewerLaunches;
 
 export async function fetchOnchainLaunchState(tokenAddress: string) {
   const factory = addresses.cronosTestnet.launchpadFactory;

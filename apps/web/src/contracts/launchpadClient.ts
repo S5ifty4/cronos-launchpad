@@ -114,6 +114,28 @@ export function prepareApproveTokenTx({ tokenAddress, amountTokens }: { tokenAdd
   };
 }
 
+export async function checkGraduationCompatibility(tokenAddress: string) {
+  const factory = addresses.cronosTestnet.launchpadFactory;
+  if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return { compatible: false, reason: 'Launch contract not configured.' };
+  try {
+    const config = await rpcClient.readContract({
+      address: factory,
+      abi: launchpadFactoryAbi,
+      functionName: 'launchConfigByToken',
+      args: [tokenAddress as `0x${string}`],
+    });
+    const router = config[8];
+    if (router.toLowerCase() === zeroAddress) return { compatible: false, reason: 'No liquidity router configured for this launch.' };
+    const code = await rpcClient.getCode({ address: router });
+    if (!code || !code.includes('f305d719')) {
+      return { compatible: false, reason: 'Graduation is paused for this launch: the configured VVS router does not support the current liquidity path.' };
+    }
+    return { compatible: true, reason: 'Graduation router supports the current liquidity path.' };
+  } catch {
+    return { compatible: false, reason: 'Graduation compatibility check failed. Try again after refreshing.' };
+  }
+}
+
 export function prepareGraduateTokenTx({ tokenAddress }: { tokenAddress?: string }) {
   const to = addresses.cronosTestnet.launchpadFactory;
   const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);

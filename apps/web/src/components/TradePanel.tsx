@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import type { Launch } from '../data/types';
-import { prepareApproveTokenTx, prepareBuyContributionTx, prepareGraduateTokenTx, prepareSellTokenTx } from '../contracts/launchpadClient';
+import { checkGraduationCompatibility, prepareApproveTokenTx, prepareBuyContributionTx, prepareGraduateTokenTx, prepareSellTokenTx } from '../contracts/launchpadClient';
 import { explorerTxUrl, shortAddress } from '../wallet/chains';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 
@@ -20,6 +20,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
   const [txHash, setTxHash] = useState<string>();
   const [status, setStatus] = useState<'idle' | 'approving' | 'simulating' | 'submitted' | 'confirmed' | 'graduating' | 'failed'>('idle');
   const [error, setError] = useState<string>();
+  const [graduationCompatibility, setGraduationCompatibility] = useState<{ compatible: boolean; reason: string } | null>(null);
   const wallet = useLaunchpadWallet();
   const publicClient = usePublicClient({ chainId: wallet.chainId });
   const reserve = parseCro(launch.reserveRaised);
@@ -30,15 +31,34 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
   const approveTx = useMemo(() => prepareApproveTokenTx({ tokenAddress: launch.address, amountTokens: amount }), [launch.address, amount]);
   const sellTx = useMemo(() => prepareSellTokenTx({ tokenAddress: launch.address, amountTokens: amount }), [launch.address, amount]);
   const graduateTx = useMemo(() => prepareGraduateTokenTx({ tokenAddress: launch.address }), [launch.address]);
+  useEffect(() => {
+    let active = true;
+    if (!targetReached || launch.status === 'Graduated') {
+      setGraduationCompatibility(null);
+      return () => { active = false; };
+    }
+    setGraduationCompatibility(null);
+    checkGraduationCompatibility(launch.address).then((next) => {
+      if (active) setGraduationCompatibility(next);
+    }).catch(() => {
+      if (active) setGraduationCompatibility({ compatible: false, reason: 'Graduation compatibility check failed. Try again after refreshing.' });
+    });
+    return () => { active = false; };
+  }, [launch.address, launch.status, targetReached]);
+  const graduationCompatible = !targetReached || launch.status === 'Graduated' || graduationCompatibility?.compatible === true;
   const activeTx = mode === 'buy' ? buyTx : sellTx;
   const busy = status === 'approving' || status === 'simulating' || status === 'submitted' || status === 'graduating';
   const canTrade = !targetReached && activeTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && !busy;
-  const canGraduate = targetReached && !launch.status.includes('Graduated') && isCreator && graduateTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && !busy;
+  const canGraduate = targetReached && graduationCompatible && !launch.status.includes('Graduated') && isCreator && graduateTx.ready && wallet.isConnected && wallet.isCorrectChain && !wallet.isPending && !busy;
   const readiness = targetReached
     ? launch.status === 'Graduated'
       ? 'Graduated. Trading is closed and LP has been seeded.'
       : isCreator
-        ? 'Target reached. Creator can graduate this launch when ready.'
+        ? graduationCompatibility?.compatible === false
+          ? graduationCompatibility.reason
+          : graduationCompatibility === null
+            ? 'Checking graduation route compatibility…'
+            : 'Target reached. Creator can graduate this launch when ready.'
         : 'Target reached. Waiting for the creator to run graduation.'
     : !wallet.isConnected
       ? 'Connect wallet to trade this launch.'
@@ -106,9 +126,9 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
         <div className="miniPanel graduationNotice">
           <p className="eyebrow">Target reached</p>
           <h3>{launch.reserveRaised} / {launch.graduationTarget}</h3>
-          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : isCreator ? 'You are the creator. Run graduation to seed VVS-compatible liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
+          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : graduationCompatibility?.compatible === false ? 'Graduation is paused while the liquidity route is updated for Cronos Testnet.' : isCreator ? 'You are the creator. Run graduation to seed VVS-compatible liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
           <button className="button primary" disabled={!canGraduate} onClick={graduate} type="button">
-            {status === 'graduating' ? 'Submitting graduation…' : status === 'submitted' ? 'Waiting for graduation…' : launch.status === 'Graduated' ? 'Graduated' : isCreator ? 'Graduate token' : 'Creator only'}
+            {status === 'graduating' ? 'Submitting graduation…' : status === 'submitted' ? 'Waiting for graduation…' : launch.status === 'Graduated' ? 'Graduated' : graduationCompatibility?.compatible === false ? 'Graduation paused' : isCreator ? 'Graduate token' : 'Creator only'}
           </button>
         </div>
       ) : null}
@@ -122,7 +142,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
         <dt>Action</dt><dd>{targetReached ? 'Graduate launch' : mode === 'buy' ? 'Buy launch tokens' : 'Sell launch tokens'}</dd>
         <dt>Pricing</dt><dd>Fixed v1 curve: target reserve buys 50% supply</dd>
         <dt>Creator</dt><dd title={launch.creator}>{shortAddress(launch.creator)}</dd>
-        <dt>LP status</dt><dd>{launch.status === 'Graduated' ? 'Seeded' : targetReached ? 'Ready for graduation' : 'Locks on graduation'}</dd>
+        <dt>LP status</dt><dd>{launch.status === 'Graduated' ? 'Seeded' : targetReached && graduationCompatibility?.compatible === false ? 'Route update needed' : targetReached ? 'Ready for graduation' : 'Locks on graduation'}</dd>
         <dt>Readiness</dt><dd>{readiness}</dd>
       </dl>
       <button className="button primary" disabled={!canTrade} onClick={submitTrade} type="button">

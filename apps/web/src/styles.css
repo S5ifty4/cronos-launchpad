@@ -22,7 +22,7 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; bac
 main { position: relative; width: min(1160px, calc(100vw - 32px)); margin: 0 auto; padding: 18px 0 64px; }
 a { color: inherit; } button, input, textarea { font: inherit; }
 
-.topNav { position: sticky; top: 12px; z-index: 10; display: grid; grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 18px; margin-bottom: 34px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(4, 5, 7, .76); backdrop-filter: blur(18px); box-shadow: 0 20px 80px rgba(0,0,0,.42); }
+.topNav { position: sticky; top: 12px; z-index: 10; display: grid; grid-template-columns: minmax(178px, auto) minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-bottom: 34px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(4, 5, 7, .76); backdrop-filter: blur(18px); box-shadow: 0 20px 80px rgba(0,0,0,.42); }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 900; letter-spacing: -0.04em; font-size: 22px; }
 .brand span span { color: var(--cronos-blue); }
 .brandMark { width: 38px; height: 38px; border-radius: 50%; object-fit: contain; filter: drop-shadow(0 0 16px rgba(76, 219, 255, .42)); }
@@ -34,12 +34,13 @@ a { color: inherit; } button, input, textarea { font: inherit; }
 .connectButton.warn { background: var(--orange); color: #170900; }
 .connectButton.connected { height: 36px; min-height: 36px; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: var(--white); border: 1px solid var(--line); padding: 0 14px; }
 .walletGroup { justify-self: end; display: inline-flex; align-items: center; gap: 8px; }
-.navActions { justify-self: end; display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.navActions { justify-self: end; display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.navActions .networkSelector > span { display: none; }
 .networkPanel { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 20px; border: 1px solid rgba(76,219,255,.18); background: rgba(255,255,255,.04); padding: 12px 14px; }
 .networkPanel .eyebrow { margin: 0; }
 .networkSelector { display: inline-flex; align-items: center; gap: 7px; margin: 0; color: var(--dim); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .networkPanel .networkSelector > span { display: none; }
-.networkSelector select { min-height: 34px; max-width: 180px; border-radius: 999px; border: 1px solid var(--line); background: rgba(4,5,7,.7); color: var(--white); padding: 0 10px; font-weight: 900; text-transform: none; letter-spacing: 0; }
+.networkSelector select { min-height: 36px; max-width: 168px; border-radius: 999px; border: 1px solid var(--line); background: rgba(4,5,7,.7); color: var(--white); padding: 0 10px; font-weight: 900; text-transform: none; letter-spacing: 0; }
 .walletDot { width: 8px; height: 8px; border-radius: 999px; background: #42ff9a; box-shadow: 0 0 14px rgba(66,255,154,.75); }
 .disconnectButton { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
 .disconnectButton:hover { color: var(--white); border-color: rgba(255,255,255,.35); }
@@ -102,6 +103,10 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .description { min-height: 54px; margin: 0 0 10px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .socials { margin: 10px 0 12px; }
 .tokenHeader .socials { margin-top: 14px; }
+.copyAddressButton { display: inline-flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; min-height: 38px; margin: 12px 0 2px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(76,219,255,.22); background: rgba(76,219,255,.07); color: var(--white); cursor: pointer; }
+.copyAddressButton span { color: var(--cronos-blue); font-family: 'JetBrains Mono', monospace; font-size: 12px; overflow-wrap: anywhere; }
+.copyAddressButton b { color: var(--white); font-size: 12px; white-space: nowrap; }
+.copyAddressButton:hover { border-color: rgba(76,219,255,.5); background: rgba(76,219,255,.12); }
 .socials .socialIcon, .amountChips span { border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: 6px; font-size: 11px; font-weight: 900; }
 .socialIcon { width: 34px; height: 34px; display: inline-grid; place-items: center; background: rgba(255,255,255,.035); text-decoration: none; cursor: pointer; }
 .socialIcon:hover { color: var(--white); border-color: rgba(76,219,255,.45); background: rgba(76,219,255,.08); }

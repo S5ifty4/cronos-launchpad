@@ -1,4 +1,3 @@
-import { filterCurrentPhase2Launches } from '../contracts/launchpadClient';
 import { creatorProfile, launches, proofPackage } from './mock';
 import { fetchSupabaseHolderSnapshots, fetchSupabaseLaunchByAddress, fetchSupabaseLaunches, fetchSupabaseLaunchTrades } from './supabase';
 import type { HolderSnapshot, Launch, Trade } from './types';
@@ -40,17 +39,17 @@ export function getProofPackage() {
 
 export async function fetchLaunches(): Promise<Launch[]> {
   const supabaseLaunches = await fetchSupabaseLaunches();
-  if (supabaseLaunches) return filterCurrentPhase2Launches(supabaseLaunches);
+  if (supabaseLaunches) return supabaseLaunches;
   const apiLaunches = await fetchOptional<Launch[]>('/launches');
-  if (apiLaunches) return filterCurrentPhase2Launches(apiLaunches);
+  if (apiLaunches) return apiLaunches;
   return enableDemoFallback ? launches : [];
 }
 
 export async function fetchLaunchByAddress(address: string): Promise<Launch | null> {
   const supabaseLaunch = await fetchSupabaseLaunchByAddress(address);
-  if (supabaseLaunch) return (await filterCurrentPhase2Launches([supabaseLaunch]))[0] ?? null;
+  if (supabaseLaunch) return supabaseLaunch;
   const apiLaunch = await fetchOptional<Launch>(`/launches/${address}`);
-  if (apiLaunch) return (await filterCurrentPhase2Launches([apiLaunch]))[0] ?? null;
+  if (apiLaunch) return apiLaunch;
   return getLaunchByAddress(address) ?? null;
 }
 

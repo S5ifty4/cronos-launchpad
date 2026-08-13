@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '../components/Badge';
 import { LaunchCard } from '../components/LaunchCard';
 import { Metric } from '../components/Metric';
-import { NetworkSelector } from '../components/NetworkSelector';
 import { fetchLaunches } from '../data/api';
 import { filterLaunches, type ExploreTab } from '../data/exploreFilters';
 import type { Launch } from '../data/types';
@@ -49,7 +48,6 @@ export function HomePage() {
           <div className="heroLogoLockup"><img src="/assets/cronosforge-logo-inverted.png" alt="CronosForge rocket launch logo" /><span>CronosForge</span></div>
           <div className="tickerTape"><span>Cronos Testnet</span><span>Mainnet coming soon</span><span>Manual graduation</span></div>
           <div className="statsGrid"><Metric label="launches live" value={loading ? '…' : String(launches.length)} /><Metric label="top progress" value={`${leadingProgress}%`} /><Metric label="LP lock default" value="180d" /></div>
-          <div className="networkPanel"><p className="eyebrow">Network</p><NetworkSelector /></div>
           <div className="proofCard"><p className="eyebrow">Default trust policy</p><ul><li>Protected token identity with on-chain duplicate and reserved-name checks.</li><li>Launches stay testnet-only until mainnet contracts are configured.</li><li>Graduation is a creator/admin transaction before automated keepers are enabled.</li></ul></div>
         </aside>
       </section>
@@ -68,7 +66,7 @@ export function HomePage() {
         </div>
         <div className="cards">{visibleLaunches.map((launch) => <LaunchCard launch={launch} key={launch.address} />)}</div>
         {loading && !visibleLaunches.length && <BoardSkeleton />}
-        {!loading && !visibleLaunches.length && <div className="miniPanel"><h2>No launches found.</h2><p className="lede">Create a Cronos Testnet launch from the current Phase 2 factory to start filling the live board. Demo/sample and old-factory launches stay hidden because buy/sell/graduation only work on Phase 2 tokens.</p><a className="button primary" href="/create">Create first testnet launch</a></div>}
+        {!loading && !visibleLaunches.length && <div className="miniPanel"><h2>No launches found.</h2><p className="lede">Create a Cronos Testnet launch to start filling the live board, or clear filters to view earlier test launches.</p><a className="button primary" href="/create">Create first testnet launch</a></div>}
       </section>
     </>
   );

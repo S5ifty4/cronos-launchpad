@@ -27,6 +27,25 @@ function withReserve(launch: Launch, reserveRaised: string, graduated: boolean):
   };
 }
 
+function CopyAddressButton({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      className="copyAddressButton"
+      type="button"
+      onClick={() => {
+        navigator.clipboard?.writeText(address).then(() => {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1800);
+        }).catch(() => undefined);
+      }}
+    >
+      <span>{shortAddress(address)}</span>
+      <b>{copied ? 'Copied' : 'Copy token address'}</b>
+    </button>
+  );
+}
+
 function TokenSkeleton({ address }: { address?: string }) {
   return (
     <section className="panel tokenDetail">
@@ -106,7 +125,7 @@ export function TokenPage({ address }: { address?: string }) {
   return (
     <section className="panel tokenDetail">
       <div className="tokenMainColumn">
-        <div className="tokenHeader"><TokenGlyph launch={launch} size="large" /><div><p className="eyebrow">Token detail</p><h2>{launch.name} <span>${launch.symbol}</span></h2><p>{launch.description || 'Launch details are still filling in.'}</p><SocialLinks socials={launch.socials} /><div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Phase 2 trading</Badge></div></div></div>
+        <div className="tokenHeader"><TokenGlyph launch={launch} size="large" /><div><p className="eyebrow">Token detail</p><h2>{launch.name} <span>${launch.symbol}</span></h2><p>{launch.description || 'Launch details are still filling in.'}</p><CopyAddressButton address={launch.address} /><SocialLinks socials={launch.socials} /><div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Phase 2 trading</Badge></div></div></div>
         <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>
         <ReserveChart launch={launch} trades={trades} />
         <div className="tablesGrid"><TradesTable trades={trades} /><HoldersTable holders={holders} /></div>

@@ -13,7 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="navLinks">{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div>
         <WalletStatus />
       </nav>
-      <div className="networkStrip"><NetworkSelector /></div>
+      <div className="networkSlot"><NetworkSelector /></div>
       {children}
       <footer className="siteFooter">
         <div>

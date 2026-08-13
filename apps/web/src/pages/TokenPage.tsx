@@ -84,6 +84,8 @@ export function TokenPage({ address }: { address?: string }) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [holders, setHolders] = useState<HolderSnapshot[]>([]);
   const [loading, setLoading] = useState(Boolean(address && !knownLaunch));
+  const [tradesLoading, setTradesLoading] = useState(Boolean(address));
+  const [holdersLoading, setHoldersLoading] = useState(Boolean(address));
   const launch = indexedLaunch ?? knownLaunch;
 
   const refreshTokenData = useCallback(() => {
@@ -96,18 +98,24 @@ export function TokenPage({ address }: { address?: string }) {
       })
       .catch(() => undefined)
       .finally(() => setLoading(false));
-    fetchLaunchTrades(address).then(setTrades).catch(() => setTrades([]));
-    fetchOnchainTradeEvents(address)
-      .then((onchainTrades) => {
-        if (onchainTrades.length) setTrades(onchainTrades);
+    setTradesLoading(true);
+    Promise.allSettled([fetchLaunchTrades(address), fetchOnchainTradeEvents(address)])
+      .then(([indexedResult, onchainResult]) => {
+        const indexedTrades = indexedResult.status === 'fulfilled' ? indexedResult.value : [];
+        const onchainTrades = onchainResult.status === 'fulfilled' ? onchainResult.value : [];
+        setTrades(onchainTrades.length ? onchainTrades : indexedTrades);
       })
-      .catch(() => undefined);
-    fetchLaunchHolders(address).then(setHolders).catch(() => setHolders([]));
-    fetchOnchainHolders(address)
-      .then((onchainHolders) => {
-        if (onchainHolders.length) setHolders(onchainHolders);
+      .catch(() => setTrades([]))
+      .finally(() => setTradesLoading(false));
+    setHoldersLoading(true);
+    Promise.allSettled([fetchLaunchHolders(address), fetchOnchainHolders(address)])
+      .then(([indexedResult, onchainResult]) => {
+        const indexedHolders = indexedResult.status === 'fulfilled' ? indexedResult.value : [];
+        const onchainHolders = onchainResult.status === 'fulfilled' ? onchainResult.value : [];
+        setHolders(onchainHolders.length ? onchainHolders : indexedHolders);
       })
-      .catch(() => undefined);
+      .catch(() => setHolders([]))
+      .finally(() => setHoldersLoading(false));
   }, [address]);
 
   useEffect(() => {
@@ -155,9 +163,9 @@ export function TokenPage({ address }: { address?: string }) {
             <div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Live trading</Badge></div>
           </div>
         </div>
-        <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>
+        <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={tradesLoading && !trades.length ? '…' : trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>
         <ReserveChart launch={launch} trades={trades} />
-        <div className="tablesGrid"><TradesTable trades={trades} /><HoldersTable holders={holders} /></div>
+        <div className="tablesGrid"><TradesTable trades={trades} loading={tradesLoading} /><HoldersTable holders={holders} loading={holdersLoading} /></div>
       </div>
       <TradePanel launch={launch} onConfirmed={refreshTokenData} />
     </section>

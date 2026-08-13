@@ -162,7 +162,7 @@ input:focus, textarea:focus { border-color: rgba(76,219,255,.65); box-shadow: 0 
 .terminalCard, .tradePanel, .miniPanel { background: #020304; border: 1px solid rgba(76,219,255,.20); border-radius: 26px; padding: 20px; box-shadow: inset 0 0 60px rgba(76,219,255,.045); }
 .skeletonCard, .tokenLoadingPanel { min-height: 220px; }
 .skeletonCard { display: grid; gap: 16px; border-radius: 26px; padding: 24px; background: #020304; border: 1px solid rgba(76,219,255,.20); box-shadow: inset 0 0 60px rgba(76,219,255,.045); }
-.skeletonCard span, .skeletonHeader span, .skeletonHeader i, .skeletonLines span { display: block; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,255,.055), rgba(76,219,255,.16), rgba(255,255,255,.055)); background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.skeletonCard span, .skeletonHeader span, .skeletonHeader i, .skeletonLines span, .tableSkeleton span { display: block; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,255,.055), rgba(76,219,255,.16), rgba(255,255,255,.055)); background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
 .skeletonCard span:nth-child(1) { width: 42%; height: 44px; }
 .skeletonCard span:nth-child(2) { width: 70%; height: 18px; }
 .skeletonCard span:nth-child(3) { width: 55%; height: 18px; }
@@ -202,6 +202,11 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
 .dataTable div, .queueList div { display: grid; grid-template-columns: .7fr 1fr .8fr .5fr; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
 .holdersTable div, .dataTable .dataNotice { grid-template-columns: .7fr 1fr 1.2fr; }
 .dataTable .dataNotice { align-items: start; }
+.tableSkeleton { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); }
+.dataTable .tableSkeleton { grid-template-columns: 1fr; }
+.tableSkeleton span { height: 18px; width: 100%; }
+.tableSkeleton span:nth-child(2) { width: 82%; }
+.tableSkeleton span:nth-child(3) { width: 64%; }
 .dataTable h3 { margin-bottom: 12px; } .buy { color: #9fffd7; } .sell { color: #ff9cb1; }
 .tradePanel { position: sticky; top: 95px; height: fit-content; }
 .buySell { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }

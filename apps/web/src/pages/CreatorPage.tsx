@@ -25,6 +25,10 @@ function metadataState(launch: Launch) {
   return missing.length ? `missing ${missing.join(', ')}` : 'complete';
 }
 
+function CreatorLaunchSkeleton() {
+  return <div className="cards">{Array.from({ length: 2 }).map((_, index) => <div className="skeletonCard" aria-label="Loading creator launches" key={index}><span /><span /><span /></div>)}</div>;
+}
+
 export function CreatorPage() {
   const wallet = useLaunchpadWallet();
   const { open } = useAppKit();
@@ -95,7 +99,9 @@ export function CreatorPage() {
 
       <section className="panel boardPanel">
         <div className="sectionHeader"><div><p className="eyebrow">My launches</p><h2>Tokens created by this wallet</h2></div></div>
-        {myLaunches.length ? (
+        {loading ? (
+          <CreatorLaunchSkeleton />
+        ) : myLaunches.length ? (
           <div className="cards">{myLaunches.map((launch) => <LaunchCard launch={launch} key={launch.address} />)}</div>
         ) : (
           <div className="miniPanel">

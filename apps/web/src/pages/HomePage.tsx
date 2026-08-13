@@ -16,7 +16,7 @@ const filterTabs: { id: ExploreTab; label: string; tone?: 'blue' | 'good' }[] = 
 ];
 
 function BoardSkeleton() {
-  return <div className="skeletonCard" aria-label="Loading launches"><span /><span /><span /></div>;
+  return <>{Array.from({ length: 3 }).map((_, index) => <div className="skeletonCard" aria-label="Loading launches" key={index}><span /><span /><span /></div>)}</>;
 }
 
 export function HomePage() {

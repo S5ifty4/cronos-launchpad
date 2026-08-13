@@ -11,8 +11,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="topNav">
         <a className="brand" href="/" aria-label="CronosForge home"><img className="brandMark" src="/assets/cronosforge-logo-inverted.png" alt="" /><span>cronos<span>forge</span></span></a>
         <div className="navLinks">{nav.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</div>
-        <div className="navActions"><NetworkSelector /><WalletStatus /></div>
+        <WalletStatus />
       </nav>
+      <div className="networkStrip"><NetworkSelector /></div>
       {children}
       <footer className="siteFooter">
         <div>

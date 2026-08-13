@@ -22,7 +22,7 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; bac
 main { width: min(1160px, calc(100vw - 32px)); margin: 0 auto; padding: 18px 0 64px; }
 a { color: inherit; } button, input, textarea { font: inherit; }
 
-.topNav { position: sticky; top: 12px; z-index: 10; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px; margin-bottom: 34px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(4, 5, 7, .76); backdrop-filter: blur(18px); box-shadow: 0 20px 80px rgba(0,0,0,.42); }
+.topNav { position: sticky; top: 12px; z-index: 10; display: grid; grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 18px; margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(4, 5, 7, .76); backdrop-filter: blur(18px); box-shadow: 0 20px 80px rgba(0,0,0,.42); }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 900; letter-spacing: -0.04em; font-size: 22px; }
 .brand span span { color: var(--cronos-blue); }
 .brandMark { width: 38px; height: 38px; border-radius: 50%; object-fit: contain; filter: drop-shadow(0 0 16px rgba(76, 219, 255, .42)); }
@@ -35,8 +35,9 @@ a { color: inherit; } button, input, textarea { font: inherit; }
 .connectButton.connected { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); color: var(--white); border: 1px solid var(--line); }
 .walletGroup { justify-self: end; display: inline-flex; align-items: center; gap: 8px; }
 .navActions { justify-self: end; display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.networkStrip { display: flex; justify-content: flex-end; margin: 0 10px 24px; }
 .networkSelector { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--dim); font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-.networkSelector select { min-height: 38px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--white); padding: 0 12px; font-weight: 900; text-transform: none; letter-spacing: 0; }
+.networkSelector select { min-height: 34px; max-width: min(260px, calc(100vw - 44px)); border-radius: 999px; border: 1px solid var(--line); background: rgba(4,5,7,.7); color: var(--white); padding: 0 12px; font-weight: 900; text-transform: none; letter-spacing: 0; }
 .walletDot { width: 8px; height: 8px; border-radius: 999px; background: #42ff9a; box-shadow: 0 0 14px rgba(66,255,154,.75); }
 .disconnectButton { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
 .disconnectButton:hover { color: var(--white); border-color: rgba(255,255,255,.35); }
@@ -225,6 +226,9 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
   .topNav { top: 8px; grid-template-columns: 1fr; justify-items: stretch; gap: 10px; }
   .brand, .connectButton, .walletGroup, .navActions { justify-self: stretch; justify-content: center; }
   .navActions { flex-wrap: wrap; }
+  .networkStrip { justify-content: center; margin: 0 0 18px; }
+  .networkSelector { width: 100%; justify-content: center; }
+  .networkSelector select { flex: 1; max-width: 240px; }
   h1 { font-size: 38px; line-height: 1.03; letter-spacing: -0.028em; }
   h2 { font-size: 30px; line-height: 1.06; letter-spacing: -0.022em; }
   .tokenHeader h2 span { margin-left: 0; display: block; font-size: 22px; }

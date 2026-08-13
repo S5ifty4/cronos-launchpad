@@ -1,5 +1,4 @@
-import { createPublicClient, http, parseAbiItem, type Address } from 'viem';
-import { cronosTestnet } from 'viem/chains';
+import { createPublicClient, defineChain, http, parseAbiItem, type Address } from 'viem';
 import { describeHandler, nextState, type DecodedLaunchpadEvent, type IndexerState } from './index.js';
 import { persistEvents } from './persistence.js';
 
@@ -11,14 +10,31 @@ const factoryEvents = [
 ];
 const vaultEvents = [parseAbiItem('event LpDeposited(address indexed lpToken,address indexed beneficiary,uint256 amount,uint256 unlocksAt)')];
 
-export type PollerConfig = { rpcUrl: string; factoryAddress: Address; vaultAddress: Address; fromBlock: bigint; toBlock?: bigint };
+const chainMeta = {
+  338: { name: 'Cronos Testnet', nativeSymbol: 'TCRO', explorerUrl: 'https://explorer.cronos.org/testnet' },
+  25: { name: 'Cronos', nativeSymbol: 'CRO', explorerUrl: 'https://explorer.cronos.org' },
+} as const;
+
+function viemChainFor(chainId: number, rpcUrl: string) {
+  const meta = chainMeta[chainId as keyof typeof chainMeta] ?? chainMeta[338];
+  return defineChain({
+    id: chainId,
+    name: meta.name,
+    nativeCurrency: { name: 'Cronos', symbol: meta.nativeSymbol, decimals: 18 },
+    rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
+    blockExplorers: { default: { name: `${meta.name} Explorer`, url: meta.explorerUrl } },
+  });
+}
+
+export type PollerConfig = { chainId: number; rpcUrl: string; factoryAddress: Address; vaultAddress: Address; fromBlock: bigint; toBlock?: bigint };
 
 export function configFromEnv(env = process.env): PollerConfig {
-  const rpcUrl = env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/';
-  const factoryAddress = env.LAUNCHPAD_FACTORY as Address | undefined;
-  const vaultAddress = env.LP_VAULT as Address | undefined;
-  if (!factoryAddress || !vaultAddress) throw new Error('Missing LAUNCHPAD_FACTORY or LP_VAULT');
-  return { rpcUrl, factoryAddress, vaultAddress, fromBlock: BigInt(env.FROM_BLOCK ?? '0'), toBlock: env.TO_BLOCK ? BigInt(env.TO_BLOCK) : undefined };
+  const chainId = Number(env.CHAIN_ID ?? '338');
+  const rpcUrl = chainId === 25 ? env.CRONOS_MAINNET_RPC_URL ?? 'https://evm.cronos.org' : env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/';
+  const factoryAddress = (chainId === 25 ? env.CRONOS_MAINNET_FACTORY_ADDRESS : env.LAUNCHPAD_FACTORY ?? env.CRONOS_TESTNET_FACTORY_ADDRESS) as Address | undefined;
+  const vaultAddress = (chainId === 25 ? env.CRONOS_MAINNET_VAULT_ADDRESS : env.LP_VAULT ?? env.CRONOS_TESTNET_VAULT_ADDRESS) as Address | undefined;
+  if (!factoryAddress || !vaultAddress) throw new Error('Missing launchpad factory or LP vault for selected chain');
+  return { chainId, rpcUrl, factoryAddress, vaultAddress, fromBlock: BigInt(env.FROM_BLOCK ?? '0'), toBlock: env.TO_BLOCK ? BigInt(env.TO_BLOCK) : undefined };
 }
 
 const maxLogRange = 1_900n;
@@ -34,7 +50,7 @@ export function blockRanges(fromBlock: bigint, toBlock: bigint, step = maxLogRan
 }
 
 export async function pollLogs(config: PollerConfig) {
-  const client = createPublicClient({ chain: cronosTestnet, transport: http(config.rpcUrl) });
+  const client = createPublicClient({ chain: viemChainFor(config.chainId, config.rpcUrl), transport: http(config.rpcUrl) });
   const toBlock = config.toBlock ?? await client.getBlockNumber();
   const factoryLogs = [];
   const vaultLogs = [];
@@ -50,8 +66,8 @@ export async function pollLogs(config: PollerConfig) {
     if (log.eventName === 'LpDeposited') return { type: 'LpDeposited', lpToken: log.args.lpToken!, beneficiary: log.args.beneficiary!, amount: log.args.amount!, unlocksAt: log.args.unlocksAt!, blockNumber: log.blockNumber, txHash: log.transactionHash };
     throw new Error('Unsupported log');
   });
-  const state: IndexerState = nextState({ chainId: cronosTestnet.id, lastIndexedBlock: config.fromBlock }, events);
-  const persistence = await persistEvents(events, cronosTestnet.id);
+  const state: IndexerState = nextState({ chainId: config.chainId, lastIndexedBlock: config.fromBlock }, events);
+  const persistence = await persistEvents(events, config.chainId);
   return { events, state, actions: events.map(describeHandler), persistence };
 }
 

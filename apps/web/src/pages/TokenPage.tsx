@@ -9,7 +9,7 @@ import { TradePanel } from '../components/TradePanel';
 import { fetchOnchainHolders, fetchOnchainLaunchState, fetchOnchainTradeEvents } from '../contracts/launchpadClient';
 import { fetchLaunchByAddress, fetchLaunchHolders, fetchLaunchTrades, getLaunches } from '../data/api';
 import type { HolderSnapshot, Launch, Trade } from '../data/types';
-import { cronosTestnet, explorerAddressUrl, shortAddress } from '../wallet/chains';
+import { explorerAddressUrl, shortAddress } from '../wallet/chains';
 
 function parseCroAmount(value: string) {
   const match = value.replace(/,/g, '').match(/[\d.]+/);
@@ -66,13 +66,27 @@ function ExplorerAddressLink({ address }: { address: string }) {
   );
 }
 
+function GraduationStatus({ launch }: { launch: Launch }) {
+  const reserve = parseCroAmount(launch.reserveRaised);
+  const target = parseCroAmount(launch.graduationTarget);
+  const targetReached = target > 0 && reserve >= target;
+  const graduated = launch.status === 'Graduated';
+  const title = graduated ? 'Graduated' : targetReached ? 'Reserve target reached' : 'Building reserve';
+  const detail = graduated
+    ? 'Launch-curve trading is closed and liquidity has been seeded.'
+    : targetReached
+      ? 'Trading is paused while the creator seeds liquidity.'
+      : `${Math.max(0, 100 - launch.progress).toLocaleString(undefined, { maximumFractionDigits: 1 })}% remaining until liquidity can be seeded.`;
+  return <div className="graduationStatus"><div><p className="eyebrow">Graduation</p><h3>{title}</h3><span>{detail}</span></div><b>{launch.progress}%</b></div>;
+}
+
 function TokenSkeleton({ address }: { address?: string }) {
   return (
     <section className="panel tokenDetail">
       <div className="miniPanel tokenLoadingPanel">
         <div className="skeletonHeader"><span /><div><i /><i /></div></div>
         <div className="skeletonLines"><span /><span /><span /></div>
-        {address && <a className="button secondary tokenLoadingExplorer" href={`${cronosTestnet.blockExplorerUrls[0]}/address/${address}`} target="_blank" rel="noreferrer">View contract on explorer ↗</a>}
+        {address && <a className="button secondary tokenLoadingExplorer" href={explorerAddressUrl(address)} target="_blank" rel="noreferrer">View contract on explorer ↗</a>}
       </div>
     </section>
   );
@@ -144,7 +158,7 @@ export function TokenPage({ address }: { address?: string }) {
           <h2>Launch not found yet.</h2>
           <p className="lede">This token is not available on the live board yet. If you just created it, give the page a moment and refresh; otherwise verify the contract on Cronos Testnet.</p>
           <div className="queueList"><div><span>Token address</span><b>{shortAddress(address)}</b><em>pending</em></div><div><span>Visibility</span><b>Not on live board yet</b><em>pending</em></div></div>
-          <a className="button secondary" href={`${cronosTestnet.blockExplorerUrls[0]}/address/${address}`} target="_blank" rel="noreferrer">View contract on explorer ↗</a>
+          <a className="button secondary" href={explorerAddressUrl(address)} target="_blank" rel="noreferrer">View contract on explorer ↗</a>
         </div>
       </section>
     );
@@ -163,6 +177,7 @@ export function TokenPage({ address }: { address?: string }) {
             <div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Live trading</Badge></div>
           </div>
         </div>
+        <GraduationStatus launch={launch} />
         <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={tradesLoading && !trades.length ? '…' : trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>
         <ReserveChart launch={launch} trades={trades} />
         <div className="tablesGrid"><TradesTable trades={trades} loading={tradesLoading} /><HoldersTable holders={holders} loading={holdersLoading} /></div>

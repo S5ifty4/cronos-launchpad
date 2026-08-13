@@ -122,8 +122,8 @@ export function AdminPage() {
         <div className="miniPanel">
           <p className="eyebrow">Operator actions</p>
           <h2>Keep anti-vamp enforcement and indexing healthy.</h2>
-          <p>Admin should eventually reserve ecosystem names, review similar-symbol reports, watch failed metadata writes, reconcile indexer lag, and verify graduation/LP-lock proof. MVP is gated and read-only.</p>
-          <div className="badges"><Badge tone="blue">deployer gated</Badge><Badge>read-only MVP</Badge></div>
+          <p>Admin should reserve ecosystem names, review similar-symbol reports, watch failed launch-detail writes, reconcile data freshness, and verify graduation/LP-lock proof. This control plane is gated and read-only for now.</p>
+          <div className="badges"><Badge tone="blue">deployer gated</Badge><Badge>read-only</Badge></div>
         </div>
       </section>
     </>

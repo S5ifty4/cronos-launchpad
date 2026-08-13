@@ -131,6 +131,10 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .terminalCard .small { max-width: 100%; white-space: normal; }
 .terminalCard { min-width: 0; }
 .createPreviewStack { min-width: 0; }
+.reviewSteps { display: grid; gap: 8px; margin: 14px 0; }
+.reviewSteps span { border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 8px 10px; color: var(--muted); }
+.reviewSteps .complete { color: #a8ffd7; border-color: rgba(31,220,130,.28); background: rgba(31,220,130,.07); }
+.reviewSteps .warn { color: #ffe1a3; border-color: rgba(255,193,84,.28); background: rgba(255,193,84,.07); }
 
 .createV2, .tokenDetail, .trustGrid, .opsGrid, .deployPanel { display: grid; grid-template-columns: minmax(0, .95fr) minmax(330px, 1fr); gap: 22px; align-items: stretch; }
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
@@ -184,6 +188,10 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
 
 .tokenDetail { grid-template-columns: minmax(0, 1fr) 330px; }
 .tokenHeader { display: grid; grid-template-columns: 86px 1fr; gap: 18px; align-items: start; margin-bottom: 16px; }
+.graduationStatus { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; padding: 18px; border: 1px solid rgba(76,219,255,.18); border-radius: 24px; background: linear-gradient(135deg, rgba(76,219,255,.08), rgba(0,0,0,.24)); }
+.graduationStatus h3 { margin: 2px 0 5px; font-size: 22px; }
+.graduationStatus span { color: var(--muted); }
+.graduationStatus b { color: var(--cronos-blue); font-family: 'JetBrains Mono', monospace; font-size: 24px; white-space: nowrap; }
 .tokenHeader .tokenGlyph { width: 86px; height: 86px; }
 .detailStats { grid-template-columns: repeat(4, 1fr); margin: 18px 0; }
 .chartPanel { height: 300px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(180deg, rgba(76,219,255,.08), rgba(0,0,0,.32)); position: relative; overflow: hidden; }
@@ -253,6 +261,12 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
   .launchMain, .tokenHeader { grid-template-columns: 58px 1fr; }
   .tokenGlyph, .uploadMock, .tokenHeader .tokenGlyph { width: 58px; height: 58px; border-radius: 18px; }
   .cardMetrics, dl, .statsGrid, .deploySteps, .detailStats, .formGrid, .creatorStats { grid-template-columns: 1fr; }
+  .graduationStatus { align-items: flex-start; flex-direction: column; }
+  .graduationStatus b { font-size: 20px; }
+  .buySell, .amountChips { grid-template-columns: 1fr 1fr; }
+  .tradePanel { padding: 16px; border-radius: 22px; }
+  .copyAddressButton span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+  .tableSkeleton span { width: 100% !important; }
   .cardMetrics { display: grid; }
   .wide { grid-column: auto; }
   .dataTable div { grid-template-columns: 1fr; }
@@ -270,5 +284,8 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
   .heroCopy, .heroBoard, .panel { padding: 18px; }
   .cardTop { flex-direction: column; }
   .tokenHeader { grid-template-columns: 1fr; }
+  .tokenHeaderMeta { gap: 8px; }
+  .tokenHeaderMeta .eyebrow { flex-basis: 100%; }
+  .copyAddressButton, .addressExplorerLink { min-height: 34px; }
   .dataTable { overflow-x: auto; }
 }

@@ -8,10 +8,10 @@ const pages: Record<LegalTopic, { eyebrow: string; title: string; intro: string;
   terms: {
     eyebrow: 'Terms of use',
     title: 'CronosForge Terms of Use',
-    intro: 'These terms are a practical MVP baseline for using CronosForge. They are not a substitute for legal advice and may be updated as the product, chain support, and business entity details mature.',
+    intro: 'These terms are a practical baseline for using CronosForge. They are not a substitute for legal advice and may be updated as the product, chain support, and business entity details mature.',
     sections: [
       { title: 'Acceptance', body: ['By accessing CronosForge, connecting a wallet, creating a launch, or interacting with token pages, you agree to use the app responsibly and comply with applicable laws and network rules.'] },
-      { title: 'Testnet and MVP status', body: ['CronosForge is currently an MVP focused on Cronos Testnet flows. Testnet assets have no guaranteed value. Features, fees, graduation rules, metadata handling, and indexing behavior may change before mainnet.'] },
+      { title: 'Current network status', body: ['CronosForge currently supports Cronos Testnet while production mainnet contracts are prepared. Testnet assets have no guaranteed value. Features, fees, graduation rules, launch details, and displayed chain data may change before mainnet.'] },
       { title: 'No financial advice', body: ['CronosForge provides launch, discovery, and proof-style UI. Nothing on the site is financial, investment, legal, tax, or trading advice. You are responsible for your own decisions and wallet actions.'] },
       { title: 'User-created launches', body: ['Creators are responsible for the accuracy of token names, symbols, artwork, descriptions, websites, and social links they submit. Names, symbols, and on-chain launch data may be immutable once submitted. Off-chain metadata may be moderated or hidden if it is misleading, abusive, illegal, or impersonates another project.'] },
       { title: 'Wallets and transactions', body: ['You control your wallet and approve transactions through third-party wallet software. CronosForge cannot reverse blockchain transactions, recover keys, guarantee transaction success, or guarantee any third-party wallet/explorer behavior. Always review wallet prompts before signing.'] },
@@ -22,7 +22,7 @@ const pages: Record<LegalTopic, { eyebrow: string; title: string; intro: string;
   privacy: {
     eyebrow: 'Privacy policy',
     title: 'CronosForge Privacy Policy',
-    intro: 'This policy explains the practical data flows for the CronosForge MVP. It avoids naming every infrastructure vendor publicly unless required, and should be reviewed before a production mainnet launch.',
+    intro: 'This policy explains the practical data flows for CronosForge and should be reviewed before production mainnet support goes live.',
     sections: [
       { title: 'Information you provide', body: ['When you create or preview a launch, you may provide token metadata such as name, symbol, description, image, website, X, Discord, and Telegram links. If you connect a wallet, the app can read your public wallet address and chain state.'] },
       { title: 'Public blockchain data', body: ['Wallet addresses, token contracts, transaction hashes, events, and balances are public blockchain data. CronosForge indexes and displays some of this information to power Explore, token detail, proof, and admin views.'] },

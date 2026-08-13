@@ -2,8 +2,16 @@ declare const process: { env: Record<string, string | undefined> };
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const cronosTestnetRpcUrl = (process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/').trim();
-const expectedFactoryAddress = (process.env.CRONOS_TESTNET_FACTORY_ADDRESS ?? '0xf88f79dead20f3932cb21590d3b29bec4e0336bb').trim().toLowerCase();
+const chainConfigs = {
+  338: {
+    rpcUrl: (process.env.CRONOS_TESTNET_RPC_URL ?? 'https://evm-t3.cronos.org/').trim(),
+    factoryAddress: (process.env.CRONOS_TESTNET_FACTORY_ADDRESS ?? '0xf88f79dead20f3932cb21590d3b29bec4e0336bb').trim().toLowerCase(),
+  },
+  25: {
+    rpcUrl: (process.env.CRONOS_MAINNET_RPC_URL ?? 'https://evm.cronos.org').trim(),
+    factoryAddress: (process.env.CRONOS_MAINNET_FACTORY_ADDRESS ?? '').trim().toLowerCase(),
+  },
+} as const;
 // TokenCreated(address indexed token,address indexed creator,string name,string symbol,bytes32 indexed normalizedNameHash,bytes32 normalizedSymbolHash,uint256 totalSupply,uint256 graduationTargetWei,bool antiBotEnabled,address vvsRouter,address wrappedNative,address lpBeneficiary,uint64 lpLockDurationSeconds)
 // Includes vvsRouter, wrappedNative/WCRO, lpBeneficiary, and lpLockDurationSeconds.
 const tokenCreatedTopic = '0xf5df120b25da30621a33445bb577a65225a029cdc4329befc8f5873126d5b7f6';
@@ -104,8 +112,8 @@ function findTokenCreatedLog(receipt: RpcReceipt, tokenAddress: string, creatorA
   });
 }
 
-async function rpc<T>(method: string, params: unknown[]): Promise<T | null> {
-  const response = await fetch(cronosTestnetRpcUrl, {
+async function rpc<T>(rpcUrl: string, method: string, params: unknown[]): Promise<T | null> {
+  const response = await fetch(rpcUrl, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
@@ -123,14 +131,16 @@ async function verifyConfirmedCreateTx(body: {
   vvsRouter: string;
   blockNumber: bigint;
   reserveRaisedWei: bigint;
+  rpcUrl: string;
+  expectedFactoryAddress: string;
 }): Promise<VerificationResult> {
   const [receipt, tx] = await Promise.all([
-    rpc<RpcReceipt>('eth_getTransactionReceipt', [body.txHash]),
-    rpc<RpcTransaction>('eth_getTransactionByHash', [body.txHash]),
+    rpc<RpcReceipt>(body.rpcUrl, 'eth_getTransactionReceipt', [body.txHash]),
+    rpc<RpcTransaction>(body.rpcUrl, 'eth_getTransactionByHash', [body.txHash]),
   ]);
   if (!receipt || !tx) return { ok: false, status: 409, error: 'tx_not_found' };
   if (receipt.status !== '0x1') return { ok: false, status: 409, error: 'tx_not_successful' };
-  if (receipt.to?.toLowerCase() !== expectedFactoryAddress || tx.to?.toLowerCase() !== expectedFactoryAddress) {
+  if (receipt.to?.toLowerCase() !== body.expectedFactoryAddress || tx.to?.toLowerCase() !== body.expectedFactoryAddress) {
     return { ok: false, status: 400, error: 'unexpected_factory' };
   }
   if (receipt.from?.toLowerCase() !== body.creatorAddress || tx.from?.toLowerCase() !== body.creatorAddress) {
@@ -163,7 +173,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
   if (!supabaseUrl || !serviceKey) return send(res, 500, { error: 'supabase_not_configured' });
-  if (!addressPattern.test(expectedFactoryAddress)) return send(res, 500, { error: 'factory_not_configured' });
 
   const body = parseBody(req.body);
   if (!body) return send(res, 400, { error: 'invalid_json' });
@@ -175,6 +184,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const name = normalizeText(body.name, 80);
   const symbol = normalizeText(body.symbol, 24).toUpperCase();
   const chainId = Number(body.chainId);
+  const chainConfig = chainConfigs[chainId as keyof typeof chainConfigs];
+  if (!addressPattern.test(chainConfig?.factoryAddress ?? '')) return send(res, 500, { error: 'factory_not_configured' });
   const blockNumber = parseRequiredUint(body.blockNumber);
   const graduationTargetWei = parseRequiredUint(body.graduationTargetWei);
   const reserveRaisedWei = parseRequiredUint(body.reserveRaisedWei);
@@ -183,12 +194,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return send(res, 400, { error: 'invalid_address' });
   }
   if (!txPattern.test(txHash)) return send(res, 400, { error: 'invalid_tx_hash' });
-  if (!name || !symbol || !Number.isInteger(chainId) || chainId !== 338 || !blockNumber || !graduationTargetWei || reserveRaisedWei === null || blockNumber <= 0n || graduationTargetWei <= 0n || reserveRaisedWei < 0n) {
+  if (!name || !symbol || !Number.isInteger(chainId) || !chainConfig || !blockNumber || !graduationTargetWei || reserveRaisedWei === null || blockNumber <= 0n || graduationTargetWei <= 0n || reserveRaisedWei < 0n) {
     return send(res, 400, { error: 'missing_required_launch_fields' });
   }
 
   try {
-    const verification = await verifyConfirmedCreateTx({ tokenAddress, creatorAddress, txHash, vvsRouter, blockNumber, reserveRaisedWei });
+    const verification = await verifyConfirmedCreateTx({ tokenAddress, creatorAddress, txHash, vvsRouter, blockNumber, reserveRaisedWei, rpcUrl: chainConfig.rpcUrl, expectedFactoryAddress: chainConfig.factoryAddress });
     if (verification.ok === false) return send(res, verification.status, { error: verification.error });
   } catch (error) {
     return send(res, 502, { error: 'rpc_verification_failed', message: error instanceof Error ? error.message : 'unknown_rpc_error' });

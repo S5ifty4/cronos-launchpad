@@ -1,6 +1,7 @@
 import { createPublicClient, decodeEventLog, encodeFunctionData, formatEther, http, keccak256, parseEther, stringToBytes } from 'viem';
 import { launchTokenAbi, launchpadFactoryAbi } from './abis';
-import { addresses } from './addresses';
+import { addresses, getContractAddresses } from './addresses';
+import { cronosTestnet, getChainConfig, getLiquidityContracts } from '../wallet/chains';
 
 export type CreateTokenForm = {
   name: string;
@@ -10,6 +11,7 @@ export type CreateTokenForm = {
   antiBotEnabled: boolean;
   antiBotDurationSeconds?: bigint;
   antiBotBaseLimitCro?: string;
+  chainId?: number;
   vvsRouter?: `0x${string}`;
   wrappedNative?: `0x${string}`;
   lpBeneficiary?: `0x${string}`;
@@ -18,14 +20,16 @@ export type CreateTokenForm = {
 const zeroAddress = '0x0000000000000000000000000000000000000000' as const;
 const oneBillion = parseEther('1000000000');
 const oneHundredEightyDays = 180n * 24n * 60n * 60n;
-const cronosTestnetRpc = 'https://evm-t3.cronos.org/';
-const defaultWrappedNative = '0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4' as const;
+const defaultWrappedNative = getLiquidityContracts(cronosTestnet.id).wcro;
 const phase2FactoryAllowlist = [
   '0xf88f79dead20f3932cb21590d3b29bec4e0336bb',
   '0xd47e7cd000beb7ba9cd569c5c7e95732e4511ee2',
   '0xfa79f4a16b1d47589739a8a9e8ae53829e8d1a01',
 ] as const;
-const rpcClient = createPublicClient({ transport: http(cronosTestnetRpc) });
+function rpcClientFor(chainId: number = cronosTestnet.id) {
+  return createPublicClient({ transport: http(getChainConfig(chainId).rpcUrls[0]) });
+}
+const rpcClient = rpcClientFor();
 
 function normalizeNumber(value: string) {
   return value.replace(/,/g, '').trim() || '0';
@@ -42,16 +46,17 @@ function isNonNegativeNumber(value: string) {
 }
 
 export function prepareCreateTokenTx(form: CreateTokenForm) {
-  const to = addresses.cronosTestnet.launchpadFactory;
-  const vvsRouter = form.vvsRouter ?? zeroAddress;
-  const wrappedNative = form.wrappedNative ?? defaultWrappedNative;
+  const chainId = form.chainId ?? cronosTestnet.id;
+  const to = getContractAddresses(chainId).launchpadFactory;
+  const vvsRouter = form.vvsRouter ?? getLiquidityContracts(chainId).smartRouter ?? zeroAddress;
+  const wrappedNative = form.wrappedNative ?? getLiquidityContracts(chainId).wcro ?? defaultWrappedNative;
   const lpBeneficiary = form.lpBeneficiary ?? zeroAddress;
   const trimmedName = form.name.trim();
   const trimmedSymbol = form.symbol.trim().toUpperCase();
   const missing = [
-    !to && 'VITE_CRONOS_TESTNET_FACTORY',
-    vvsRouter === zeroAddress && 'VITE_VVS_ROUTER',
-    wrappedNative === zeroAddress && 'VITE_VVS_WCRO',
+    !to && 'launch contract',
+    vvsRouter === zeroAddress && 'liquidity router',
+    wrappedNative === zeroAddress && 'wrapped CRO',
     lpBeneficiary === zeroAddress && 'wallet address',
     !trimmedName && 'token name',
     !trimmedSymbol && 'symbol',
@@ -85,13 +90,13 @@ export function prepareCreateTokenTx(form: CreateTokenForm) {
   };
 }
 
-export function prepareBuyContributionTx({ tokenAddress, amountCro }: { tokenAddress?: string; amountCro: string }) {
-  const to = addresses.cronosTestnet.launchpadFactory;
+export function prepareBuyContributionTx({ tokenAddress, amountCro, chainId = cronosTestnet.id }: { tokenAddress?: string; amountCro: string; chainId?: number }) {
+  const to = getContractAddresses(chainId).launchpadFactory;
   const normalizedAmount = normalizeNumber(amountCro);
   const validAmount = isPositiveNumber(amountCro);
   const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
   const missing = [
-    !to && 'VITE_CRONOS_TESTNET_FACTORY',
+    !to && 'launch contract',
     !validToken && 'token address',
     !validAmount && 'CRO amount',
   ].filter(Boolean) as string[];
@@ -104,12 +109,12 @@ export function prepareBuyContributionTx({ tokenAddress, amountCro }: { tokenAdd
   };
 }
 
-export function prepareApproveTokenTx({ tokenAddress, amountTokens }: { tokenAddress?: string; amountTokens: string }) {
-  const spender = addresses.cronosTestnet.launchpadFactory;
+export function prepareApproveTokenTx({ tokenAddress, amountTokens, chainId = cronosTestnet.id }: { tokenAddress?: string; amountTokens: string; chainId?: number }) {
+  const spender = getContractAddresses(chainId).launchpadFactory;
   const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
   const validAmount = isPositiveNumber(amountTokens);
   const amount = parseEther(validAmount ? normalizeNumber(amountTokens) : '0');
-  const missing = [!spender && 'VITE_CRONOS_TESTNET_FACTORY', !validToken && 'token address', !validAmount && 'token amount'].filter(Boolean) as string[];
+  const missing = [!spender && 'launch contract', !validToken && 'token address', !validAmount && 'token amount'].filter(Boolean) as string[];
   return {
     to: validToken ? tokenAddress as `0x${string}` : undefined,
     value: 0n,
@@ -119,11 +124,12 @@ export function prepareApproveTokenTx({ tokenAddress, amountTokens }: { tokenAdd
   };
 }
 
-export async function checkGraduationCompatibility(tokenAddress: string) {
-  const factory = addresses.cronosTestnet.launchpadFactory;
+export async function checkGraduationCompatibility(tokenAddress: string, chainId: number = cronosTestnet.id) {
+  const factory = getContractAddresses(chainId).launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return { compatible: false, reason: 'Launch contract not configured.' };
   try {
-    const config = await rpcClient.readContract({
+    const client = rpcClientFor(chainId);
+    const config = await client.readContract({
       address: factory,
       abi: launchpadFactoryAbi,
       functionName: 'launchConfigByToken',
@@ -131,7 +137,7 @@ export async function checkGraduationCompatibility(tokenAddress: string) {
     });
     const router = config[8];
     if (router.toLowerCase() === zeroAddress) return { compatible: false, reason: 'No liquidity router configured for this launch.' };
-    const code = await rpcClient.getCode({ address: router });
+    const code = await client.getCode({ address: router });
     if (!code || !code.includes('f305d719')) {
       return { compatible: false, reason: 'Graduation is paused for this launch: the configured VVS router does not support the current liquidity path.' };
     }
@@ -141,11 +147,11 @@ export async function checkGraduationCompatibility(tokenAddress: string) {
   }
 }
 
-export function prepareGraduateTokenTx({ tokenAddress }: { tokenAddress?: string }) {
-  const to = addresses.cronosTestnet.launchpadFactory;
+export function prepareGraduateTokenTx({ tokenAddress, chainId = cronosTestnet.id }: { tokenAddress?: string; chainId?: number }) {
+  const to = getContractAddresses(chainId).launchpadFactory;
   const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
-  const missing = [!to && 'VITE_CRONOS_TESTNET_FACTORY', !validToken && 'token address'].filter(Boolean) as string[];
+  const missing = [!to && 'launch contract', !validToken && 'token address'].filter(Boolean) as string[];
   return {
     to,
     value: 0n,
@@ -155,13 +161,13 @@ export function prepareGraduateTokenTx({ tokenAddress }: { tokenAddress?: string
   };
 }
 
-export function prepareSellTokenTx({ tokenAddress, amountTokens, minCroOut = '0' }: { tokenAddress?: string; amountTokens: string; minCroOut?: string }) {
-  const to = addresses.cronosTestnet.launchpadFactory;
+export function prepareSellTokenTx({ tokenAddress, amountTokens, minCroOut = '0', chainId = cronosTestnet.id }: { tokenAddress?: string; amountTokens: string; minCroOut?: string; chainId?: number }) {
+  const to = getContractAddresses(chainId).launchpadFactory;
   const validToken = typeof tokenAddress === 'string' && /^0x[a-fA-F0-9]{40}$/.test(tokenAddress);
   const validAmount = isPositiveNumber(amountTokens);
   const tokensIn = parseEther(validAmount ? normalizeNumber(amountTokens) : '0');
   const minCro = parseEther(isNonNegativeNumber(minCroOut) ? normalizeNumber(minCroOut) : '0');
-  const missing = [!to && 'VITE_CRONOS_TESTNET_FACTORY', !validToken && 'token address', !validAmount && 'token amount'].filter(Boolean) as string[];
+  const missing = [!to && 'launch contract', !validToken && 'token address', !validAmount && 'token amount'].filter(Boolean) as string[];
   return {
     to,
     value: 0n,

@@ -8,7 +8,7 @@ import { fetchLaunches } from '../data/api';
 import type { Launch } from '../data/types';
 import { uploadTokenImage } from '../data/supabase';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
-import { vvsTestnetContracts, explorerTxUrl, shortAddress } from '../wallet/chains';
+import { getLiquidityContracts, explorerTxUrl, shortAddress } from '../wallet/chains';
 import { ToggleRow } from '../components/ToggleRow';
 import { normalizeSocialUrl, SocialLinks } from '../components/SocialLinks';
 
@@ -63,16 +63,19 @@ export function CreatePage() {
   const [existingIdentities, setExistingIdentities] = useState<Launch[]>([]);
   const [identityLoading, setIdentityLoading] = useState(true);
   const wallet = useLaunchpadWallet();
+  const networkLiquidity = getLiquidityContracts(wallet.chainId);
   const publicClient = usePublicClient({ chainId: wallet.chainId });
   const txPreview = useMemo(() => prepareCreateTokenTx({
     name,
     symbol,
     graduationTargetCro: graduationTarget,
     initialBuyCro: initialBuy,
+    chainId: wallet.chainId,
     antiBotEnabled,
-    vvsRouter: vvsTestnetContracts.smartRouter,
+    vvsRouter: networkLiquidity.smartRouter,
+    wrappedNative: networkLiquidity.wcro,
     lpBeneficiary: wallet.address as `0x${string}` | undefined,
-  }), [name, symbol, graduationTarget, initialBuy, antiBotEnabled, wallet.address]);
+  }), [name, symbol, graduationTarget, initialBuy, antiBotEnabled, wallet.address, wallet.chainId, networkLiquidity.smartRouter, networkLiquidity.wcro]);
   const identity = useMemo(() => assessTokenIdentity({ name, symbol }, existingIdentities), [name, symbol, existingIdentities]);
   const currentLimit = antiBotEnabled ? getAntiBotBuyLimit({ elapsedSeconds: 180, baseLimitCro: 1_000 }) : undefined;
   const totalCost = Number(initialBuy.replace(/,/g, '') || 0) + 15;
@@ -176,7 +179,7 @@ export function CreatePage() {
           graduationTargetWei: txPreview.args[5].toString(),
           reserveRaisedWei: txPreview.value.toString(),
           antiBotEnabled,
-          vvsRouter: vvsTestnetContracts.smartRouter,
+          vvsRouter: networkLiquidity.smartRouter,
           txHash: hash,
           blockNumber: receipt.blockNumber.toString(),
         }).catch((error) => {
@@ -256,9 +259,15 @@ export function CreatePage() {
           <div className="progress"><span style={{ width: '0%' }} /></div>
           <div className="badges"><Badge tone="blue">Preview</Badge>{antiBotEnabled && <Badge tone="good">Anti-snipe</Badge>}<Badge>No tax</Badge></div>
         </article>
-        <div className="terminalCard">
-          <h3>Preflight + cost</h3>
+        <div className="terminalCard reviewCard">
+          <p className="eyebrow">Review</p>
+          <h3>Ready when every check is clear</h3>
           <Badge tone={identity.status === 'available' ? 'good' : identity.status === 'warn' ? 'warn' : 'bad'}>{identity.status}</Badge>
+          <div className="reviewSteps">
+            <span className={identity.status === 'available' ? 'complete' : 'warn'}>Identity check</span>
+            <span className={wallet.isConnected && wallet.isCorrectChain ? 'complete' : 'warn'}>Wallet + network</span>
+            <span className={txPreview.ready ? 'complete' : 'warn'}>Launch details</span>
+          </div>
           <dl>
             <dt>Checked name</dt><dd>{identity.normalizedName}</dd>
             <dt>Checked symbol</dt><dd>{identity.normalizedSymbol}</dd>
@@ -266,7 +275,7 @@ export function CreatePage() {
             <dt>Anti-snipe cap</dt><dd>{currentLimit ? `${currentLimit} CRO max buy at minute 3` : 'Disabled for this launch'}</dd>
             <dt>Estimated total</dt><dd>{totalCost.toLocaleString()} CRO incl. launch fee</dd>
             <dt>Ready to sign</dt><dd>{txReadiness}</dd>
-            <dt>Contract call</dt><dd>{txPreview.ready ? 'Ready' : 'Waiting for required fields'}</dd>
+            <dt>Launch transaction</dt><dd>{txPreview.ready ? 'Ready' : 'Waiting for required fields'}</dd>
           </dl>
           <button className="button primary" disabled={submitDisabled} onClick={handleSend}>{submitLabel}</button>
           {wallet.error && <p className="small">Wallet: {wallet.error}</p>}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import type { Launch } from '../data/types';
 import { checkGraduationCompatibility, prepareApproveTokenTx, prepareBuyContributionTx, prepareGraduateTokenTx, prepareSellTokenTx } from '../contracts/launchpadClient';
-import { explorerTxUrl, shortAddress } from '../wallet/chains';
+import { explorerTxUrl, getChainConfig, shortAddress } from '../wallet/chains';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
 
 function parseCro(value: string) {
@@ -27,10 +27,11 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
   const target = parseCro(launch.graduationTarget);
   const targetReached = target > 0 && reserve >= target;
   const isCreator = sameAddress(wallet.address, launch.creator);
-  const buyTx = useMemo(() => prepareBuyContributionTx({ tokenAddress: launch.address, amountCro: amount }), [launch.address, amount]);
-  const approveTx = useMemo(() => prepareApproveTokenTx({ tokenAddress: launch.address, amountTokens: amount }), [launch.address, amount]);
-  const sellTx = useMemo(() => prepareSellTokenTx({ tokenAddress: launch.address, amountTokens: amount }), [launch.address, amount]);
-  const graduateTx = useMemo(() => prepareGraduateTokenTx({ tokenAddress: launch.address }), [launch.address]);
+  const networkName = getChainConfig(wallet.chainId).name;
+  const buyTx = useMemo(() => prepareBuyContributionTx({ tokenAddress: launch.address, amountCro: amount, chainId: wallet.chainId }), [launch.address, amount, wallet.chainId]);
+  const approveTx = useMemo(() => prepareApproveTokenTx({ tokenAddress: launch.address, amountTokens: amount, chainId: wallet.chainId }), [launch.address, amount, wallet.chainId]);
+  const sellTx = useMemo(() => prepareSellTokenTx({ tokenAddress: launch.address, amountTokens: amount, chainId: wallet.chainId }), [launch.address, amount, wallet.chainId]);
+  const graduateTx = useMemo(() => prepareGraduateTokenTx({ tokenAddress: launch.address, chainId: wallet.chainId }), [launch.address, wallet.chainId]);
   useEffect(() => {
     let active = true;
     if (!targetReached || launch.status === 'Graduated') {
@@ -38,13 +39,13 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
       return () => { active = false; };
     }
     setGraduationCompatibility(null);
-    checkGraduationCompatibility(launch.address).then((next) => {
+    checkGraduationCompatibility(launch.address, wallet.chainId).then((next) => {
       if (active) setGraduationCompatibility(next);
     }).catch(() => {
       if (active) setGraduationCompatibility({ compatible: false, reason: 'Graduation compatibility check failed. Try again after refreshing.' });
     });
     return () => { active = false; };
-  }, [launch.address, launch.status, targetReached]);
+  }, [launch.address, launch.status, targetReached, wallet.chainId]);
   const graduationCompatible = !targetReached || launch.status === 'Graduated' || graduationCompatibility?.compatible === true;
   const activeTx = mode === 'buy' ? buyTx : sellTx;
   const busy = status === 'approving' || status === 'simulating' || status === 'submitted' || status === 'graduating';
@@ -63,7 +64,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
     : !wallet.isConnected
       ? 'Connect wallet to trade.'
       : !wallet.isCorrectChain
-        ? 'Switch to Cronos Testnet.'
+        ? `Switch to ${networkName}.`
         : activeTx.ready ? 'Ready.' : `Waiting: ${activeTx.missing.join(', ')}`;
 
   const submitTrade = async () => {
@@ -126,7 +127,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
         <div className="miniPanel graduationNotice">
           <p className="eyebrow">Target reached</p>
           <h3>{launch.reserveRaised} / {launch.graduationTarget}</h3>
-          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : graduationCompatibility?.compatible === false ? 'Graduation is paused while the liquidity route is updated for Cronos Testnet.' : isCreator ? 'You are the creator. Run graduation to seed VVS-compatible liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
+          <p>{launch.status === 'Graduated' ? 'This launch has graduated and trading on the launch curve is closed.' : graduationCompatibility?.compatible === false ? `Graduation is paused while the liquidity route is updated for ${networkName}.` : isCreator ? 'You are the creator. Run graduation to seed liquidity.' : 'Trading is closed while the launch waits for the creator to graduate it.'}</p>
           <button className="button primary" disabled={!canGraduate} onClick={graduate} type="button">
             {status === 'graduating' ? 'Submitting graduation…' : status === 'submitted' ? 'Waiting for graduation…' : launch.status === 'Graduated' ? 'Graduated' : graduationCompatibility?.compatible === false ? 'Graduation paused' : isCreator ? 'Graduate token' : 'Creator only'}
           </button>
@@ -147,7 +148,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
       <button className="button primary" disabled={!canTrade} onClick={submitTrade} type="button">
         {targetReached ? 'Trading closed' : status === 'approving' ? 'Approving…' : status === 'simulating' ? 'Checking tx…' : status === 'submitted' ? 'Waiting for confirmation…' : mode === 'buy' ? 'Buy tokens' : 'Sell tokens'}
       </button>
-      <p className="small">Trades execute on Cronos Testnet. Review wallet prompts before signing.</p>
+      <p className="small">Trades execute on {networkName}. Review wallet prompts before signing.</p>
       {txHash && <p className="small">Tx: <a href={explorerTxUrl(txHash, wallet.chainId)} target="_blank" rel="noreferrer">{shortAddress(txHash)} ↗</a></p>}
       {status === 'confirmed' && <p className="small">{targetReached ? 'Graduation' : mode === 'buy' ? 'Buy' : 'Sell'} confirmed.</p>}
       {error && <p className="small">Wallet: {error}</p>}

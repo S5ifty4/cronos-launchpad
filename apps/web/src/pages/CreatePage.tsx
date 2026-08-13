@@ -267,6 +267,7 @@ export function CreatePage() {
             <span className={identity.status === 'available' ? 'complete' : 'warn'}>Identity check</span>
             <span className={wallet.isConnected && wallet.isCorrectChain ? 'complete' : 'warn'}>Wallet + network</span>
             <span className={txPreview.ready ? 'complete' : 'warn'}>Launch details</span>
+            <span className="complete">Fixed 1B token supply</span>
             <span className={publicClient && wallet.address && txPreview.ready ? 'complete' : 'warn'}>Chain simulation before wallet</span>
           </div>
           <dl>

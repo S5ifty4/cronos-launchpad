@@ -30,6 +30,16 @@ async function factoryForLaunch(row) {
   return tx?.to;
 }
 
+async function blockTimestamp(blockNumber) {
+  if (!blockTimestamp.cache) blockTimestamp.cache = new Map();
+  const key = blockNumber.toString();
+  if (blockTimestamp.cache.has(key)) return blockTimestamp.cache.get(key);
+  const block = await client.getBlock({ blockNumber });
+  const timestamp = new Date(Number(block.timestamp) * 1000).toISOString();
+  blockTimestamp.cache.set(key, timestamp);
+  return timestamp;
+}
+
 async function upsertTrades(row, factory, latest) {
   if (!factory) return 0;
   const fromBlock = BigInt(row.created_block ?? 0);
@@ -39,6 +49,7 @@ async function upsertTrades(row, factory, latest) {
       const logs = await client.getLogs({ address: factory, event, args: { token: row.token_address }, fromBlock: fromBlockRange, toBlock: toBlockRange }).catch(() => []);
       for (const log of logs) {
         const decoded = decodeEventLog({ abi: [event], data: log.data, topics: log.topics });
+        const tradedAt = await blockTimestamp(log.blockNumber);
         if (decoded.eventName === 'TokenBought') rows.push({
           token_address: row.token_address,
           trader_address: decoded.args.buyer.toLowerCase(),
@@ -47,7 +58,7 @@ async function upsertTrades(row, factory, latest) {
           token_amount: decoded.args.tokensOut.toString(),
           tx_hash: log.transactionHash,
           block_number: log.blockNumber.toString(),
-          traded_at: new Date().toISOString(),
+          traded_at: tradedAt,
         });
         if (decoded.eventName === 'TokenSold') rows.push({
           token_address: row.token_address,
@@ -57,7 +68,7 @@ async function upsertTrades(row, factory, latest) {
           token_amount: decoded.args.tokensIn.toString(),
           tx_hash: log.transactionHash,
           block_number: log.blockNumber.toString(),
-          traded_at: new Date().toISOString(),
+          traded_at: tradedAt,
         });
       }
     }

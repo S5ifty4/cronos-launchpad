@@ -37,3 +37,8 @@ export function explorerTxUrl(txHash: string, chainId: number = cronosTestnet.id
   const explorerBase = chainId === cronosMainnet.id ? cronosMainnet.blockExplorerUrls[0] : cronosTestnet.blockExplorerUrls[0];
   return `${explorerBase}/tx/${txHash}`;
 }
+
+export function explorerAddressUrl(address: string, chainId: number = cronosTestnet.id) {
+  const explorerBase = chainId === cronosMainnet.id ? cronosMainnet.blockExplorerUrls[0] : cronosTestnet.blockExplorerUrls[0];
+  return `${explorerBase}/address/${address}`;
+}

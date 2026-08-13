@@ -9,7 +9,7 @@ import { TradePanel } from '../components/TradePanel';
 import { fetchOnchainHolders, fetchOnchainLaunchState, fetchOnchainTradeEvents } from '../contracts/launchpadClient';
 import { fetchLaunchByAddress, fetchLaunchHolders, fetchLaunchTrades, getLaunches } from '../data/api';
 import type { HolderSnapshot, Launch, Trade } from '../data/types';
-import { cronosTestnet, shortAddress } from '../wallet/chains';
+import { cronosTestnet, explorerAddressUrl, shortAddress } from '../wallet/chains';
 
 function parseCroAmount(value: string) {
   const match = value.replace(/,/g, '').match(/[\d.]+/);
@@ -48,6 +48,21 @@ function CopyAddressButton({ address }: { address: string }) {
       <span>{shortAddress(address)}</span>
       <b aria-hidden="true">{copied ? '✓' : '⧉'}</b>
     </button>
+  );
+}
+
+function ExplorerAddressLink({ address }: { address: string }) {
+  return (
+    <a
+      aria-label="Open token contract on explorer"
+      className="addressExplorerLink"
+      href={explorerAddressUrl(address)}
+      rel="noreferrer"
+      target="_blank"
+      title="Open token contract on explorer"
+    >
+      ↗
+    </a>
   );
 }
 
@@ -133,7 +148,7 @@ export function TokenPage({ address }: { address?: string }) {
         <div className="tokenHeader">
           <TokenGlyph launch={launch} size="large" />
           <div>
-            <div className="tokenHeaderMeta"><p className="eyebrow">Token detail</p><CopyAddressButton address={launch.address} /></div>
+            <div className="tokenHeaderMeta"><p className="eyebrow">Token detail</p><CopyAddressButton address={launch.address} /><ExplorerAddressLink address={launch.address} /></div>
             <h2>{launch.name} <span>${launch.symbol}</span></h2>
             <p>{launch.description || 'Launch details are still filling in.'}</p>
             <SocialLinks socials={launch.socials} />

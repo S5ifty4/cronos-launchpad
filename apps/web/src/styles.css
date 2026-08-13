@@ -109,6 +109,8 @@ h3 { margin: 0 0 8px; letter-spacing: -0.03em; } p, li, dd, dt { color: var(--mu
 .copyAddressButton span { color: var(--cronos-blue); font-family: 'JetBrains Mono', monospace; font-size: 11px; overflow-wrap: anywhere; }
 .copyAddressButton b { display: inline-grid; place-items: center; width: 16px; height: 16px; color: var(--white); font-size: 12px; line-height: 1; white-space: nowrap; }
 .copyAddressButton:hover { border-color: rgba(76,219,255,.5); background: rgba(76,219,255,.12); }
+.addressExplorerLink { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; border: 1px solid rgba(76,219,255,.24); background: rgba(255,255,255,.035); color: var(--cronos-blue); font-size: 13px; font-weight: 900; text-decoration: none; line-height: 1; }
+.addressExplorerLink:hover { border-color: rgba(76,219,255,.5); background: rgba(76,219,255,.12); color: var(--white); }
 .socials .socialIcon, .amountChips span { border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: 6px; font-size: 11px; font-weight: 900; }
 .socialIcon { width: 34px; height: 34px; display: inline-grid; place-items: center; background: rgba(255,255,255,.035); text-decoration: none; cursor: pointer; }
 .socialIcon:hover { color: var(--white); border-color: rgba(76,219,255,.45); background: rgba(76,219,255,.08); }

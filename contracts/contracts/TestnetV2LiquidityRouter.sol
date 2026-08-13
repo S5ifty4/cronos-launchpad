@@ -22,7 +22,7 @@ contract TestnetV2LiquidityFactory {
 
     event PairCreated(address indexed tokenA, address indexed tokenB, address pair);
 
-    function ensurePair(address tokenA, address tokenB) external returns (address pair) {
+    function createPair(address tokenA, address tokenB) external returns (address pair) {
         pair = getPair[tokenA][tokenB];
         if (pair == address(0)) {
             TestnetLpToken lp = new TestnetLpToken("CronosForge Testnet LP", "CF-LP");
@@ -31,6 +31,10 @@ contract TestnetV2LiquidityFactory {
             getPair[tokenB][tokenA] = pair;
             emit PairCreated(tokenA, tokenB, pair);
         }
+    }
+
+    function ensurePair(address tokenA, address tokenB) external returns (address pair) {
+        pair = this.createPair(tokenA, tokenB);
     }
 }
 

@@ -120,7 +120,7 @@ describe('NameRegistry + LaunchpadFactory', async () => {
     assert.notEqual(launchState[2], zeroAddress);
   });
 
-  it('graduates through a router that does not expose a readable pair by sending LP to beneficiary', async () => {
+  it('pre-creates a readable pair and deposits graduation LP into the timelock vault when supported', async () => {
     const { creator, lpBeneficiary, registry, vault, router, factory } = await deployFixture();
     const args = defaultArgs(router.address, lpBeneficiary.account.address);
 
@@ -141,8 +141,8 @@ describe('NameRegistry + LaunchpadFactory', async () => {
     const lpUnlocksAt = launchState[5];
 
     assert.notEqual(pair, zeroAddress);
-    assert.equal(lpVaultAddress, zeroAddress);
+    assert.equal(lpVaultAddress, getAddress(vault.address));
     assert(liquidity > 0n);
-    assert.equal(lpUnlocksAt, 0n);
+    assert(lpUnlocksAt > 0n);
   });
 });

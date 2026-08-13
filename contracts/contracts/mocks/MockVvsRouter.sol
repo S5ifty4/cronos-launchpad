@@ -17,7 +17,7 @@ contract MockVvsFactory {
 
     event PairCreated(address indexed tokenA, address indexed tokenB, address pair);
 
-    function ensurePair(address tokenA, address tokenB) external returns (address pair) {
+    function createPair(address tokenA, address tokenB) external returns (address pair) {
         pair = getPair[tokenA][tokenB];
         if (pair == address(0)) {
             MockLpToken lp = new MockLpToken("Mock VVS LP", "mVVS-LP");
@@ -26,6 +26,10 @@ contract MockVvsFactory {
             getPair[tokenB][tokenA] = pair;
             emit PairCreated(tokenA, tokenB, pair);
         }
+    }
+
+    function ensurePair(address tokenA, address tokenB) external returns (address pair) {
+        pair = this.createPair(tokenA, tokenB);
     }
 }
 

@@ -207,6 +207,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         if (tokenLiquidity == 0) revert InvalidSupply();
 
         IVvsRouter router = IVvsRouter(config.vvsRouter);
+        _tryCreatePair(config.vvsRouter, token, config.wrappedNative);
         address pairBeforeAdd = _tryPair(config.vvsRouter, token, config.wrappedNative);
         address lpRecipient = pairBeforeAdd == address(0) ? config.lpBeneficiary : address(this);
         IERC20(token).approve(config.vvsRouter, tokenLiquidity);
@@ -277,6 +278,15 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         bool ok = IERC20(token).transfer(buyer, tokensOut);
         if (!ok) revert TokenTransferFailed();
         emit TokenBought(token, buyer, croIn, tokensOut, state.reserveRaisedWei);
+    }
+
+    function _tryCreatePair(address routerAddress, address token, address wrappedNative) internal {
+        (bool factoryOk, bytes memory factoryData) = routerAddress.staticcall(abi.encodeWithSignature("factory()"));
+        if (!factoryOk || factoryData.length < 32) return;
+        address factoryAddress = abi.decode(factoryData, (address));
+        if (factoryAddress == address(0)) return;
+        (bool createOk, ) = factoryAddress.call(abi.encodeWithSignature("createPair(address,address)", token, wrappedNative));
+        createOk;
     }
 
     function _tryPair(address routerAddress, address token, address wrappedNative) internal view returns (address pair) {

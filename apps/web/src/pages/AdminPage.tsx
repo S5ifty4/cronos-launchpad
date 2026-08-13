@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { Badge } from '../components/Badge';
 import { Metric } from '../components/Metric';
-import { fetchLaunches } from '../data/api';
-import type { Launch } from '../data/types';
+import { fetchLaunchHolders, fetchLaunchTrades, fetchLaunches } from '../data/api';
+import type { HolderSnapshot, Launch, Trade } from '../data/types';
 import { addresses } from '../contracts/addresses';
 import { shortAddress } from '../wallet/chains';
 import { useLaunchpadWallet } from '../wallet/useLaunchpadWallet';
@@ -22,14 +22,21 @@ export function AdminPage() {
   const wallet = useLaunchpadWallet();
   const { open } = useAppKit();
   const [launches, setLaunches] = useState<Launch[]>([]);
+  const [activity, setActivity] = useState<Record<string, { trades: Trade[]; holders: HolderSnapshot[] }>>({});
   const [loading, setLoading] = useState(true);
   const isAdmin = sameAddress(wallet.address, deployerWallet);
 
   useEffect(() => {
     let active = true;
     fetchLaunches()
-      .then((nextLaunches) => {
-        if (active) setLaunches(nextLaunches);
+      .then(async (nextLaunches) => {
+        if (!active) return;
+        setLaunches(nextLaunches);
+        const activityPairs = await Promise.all(nextLaunches.slice(0, 12).map(async (launch) => {
+          const [trades, holders] = await Promise.all([fetchLaunchTrades(launch.address), fetchLaunchHolders(launch.address)]);
+          return [launch.address.toLowerCase(), { trades, holders }] as const;
+        }));
+        if (active) setActivity(Object.fromEntries(activityPairs));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -39,14 +46,19 @@ export function AdminPage() {
 
   const operatorQueue = useMemo(() => {
     const missing = launches.filter(missingMetadata);
+    const staleActivity = launches.filter((launch) => {
+      const rows = activity[launch.address.toLowerCase()];
+      return parseFloat(launch.reserveRaised.replace(/[^\d.]/g, '') || '0') > 0 && (!rows || rows.trades.length === 0 || rows.holders.length === 0);
+    });
     const near = launches.filter((launch) => launch.status === 'Near graduation');
     const graduated = launches.filter((launch) => launch.status === 'Graduated');
     return [
       { type: 'Metadata/indexing review', subject: `${missing.length} launch${missing.length === 1 ? '' : 'es'} missing image/social/description`, state: missing.length ? 'review' : 'clear' },
+      { type: 'Token activity', subject: `${staleActivity.length} launch${staleActivity.length === 1 ? '' : 'es'} need trade/holder refresh`, state: staleActivity.length ? 'backfill' : 'clear' },
       { type: 'Graduation queue', subject: `${near.length} launch${near.length === 1 ? '' : 'es'} near target`, state: near.length ? 'watch' : 'clear' },
       { type: 'LP/proof monitor', subject: `${graduated.length} graduated launch${graduated.length === 1 ? '' : 'es'}`, state: graduated.length ? 'verify proof' : 'none' },
     ];
-  }, [launches]);
+  }, [launches, activity]);
 
   if (!wallet.isConnected || !wallet.address) {
     return (

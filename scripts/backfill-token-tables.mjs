@@ -1,5 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import { createPublicClient, decodeEventLog, formatEther, http, parseAbiItem } from 'viem';
+import { createRequire } from 'node:module';
+
+const require = createRequire(new URL('../apps/indexer/package.json', import.meta.url));
+const { createClient } = require('@supabase/supabase-js');
+const { createPublicClient, decodeEventLog, http, parseAbiItem } = require('viem');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

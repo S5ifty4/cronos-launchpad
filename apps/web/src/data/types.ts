@@ -27,6 +27,8 @@ export type Launch = {
   createdBlock?: number;
   createdTx?: string;
   factoryAddress?: string;
+  pairAddress?: string;
+  lpVault?: string;
 };
 
 export type Trade = { side: 'Buy' | 'Sell'; wallet: string; amount: string; tokens: string; age: string; txHash?: string; blockNumber?: number; timestamp?: string; croAmountWei?: string; reserveRaisedWei?: string };

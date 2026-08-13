@@ -9,7 +9,9 @@
     "build": "pnpm --recursive build",
     "typecheck": "pnpm --recursive typecheck",
     "web:dev": "pnpm --filter @cronos-launchpad/web dev",
-    "contracts:test": "pnpm --filter @cronos-launchpad/contracts test"
+    "contracts:test": "pnpm --filter @cronos-launchpad/contracts test",
+    "activity:backfill": "pnpm --filter @cronos-launchpad/indexer exec node ../../scripts/backfill-token-tables.mjs",
+    "audit:high": "pnpm audit --audit-level high"
   },
   "pnpm": {
     "overrides": {

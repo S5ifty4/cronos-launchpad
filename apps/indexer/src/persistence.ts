@@ -37,6 +37,7 @@ export async function persistEvents(events: DecodedLaunchpadEvent[], chainId: nu
       launches += 1;
     }
     if (event.type === 'TokenBought') {
+      await supabaseAdmin.from('trades').delete().eq('tx_hash', event.txHash);
       const { error: tradeError } = await supabaseAdmin.from('trades').insert({
         token_address: event.token.toLowerCase(),
         trader_address: event.buyer.toLowerCase(),
@@ -56,6 +57,7 @@ export async function persistEvents(events: DecodedLaunchpadEvent[], chainId: nu
       trades += 1;
     }
     if (event.type === 'TokenSold') {
+      await supabaseAdmin.from('trades').delete().eq('tx_hash', event.txHash);
       const { error: tradeError } = await supabaseAdmin.from('trades').insert({
         token_address: event.token.toLowerCase(),
         trader_address: event.seller.toLowerCase(),

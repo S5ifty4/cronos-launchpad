@@ -80,6 +80,22 @@ function GraduationStatus({ launch }: { launch: Launch }) {
   return <div className="graduationStatus"><div><p className="eyebrow">Graduation</p><h3>{title}</h3><span>{detail}</span></div><b>{launch.progress}%</b></div>;
 }
 
+function GraduationProof({ launch }: { launch: Launch }) {
+  if (launch.status !== 'Graduated' && launch.status !== 'Near graduation') return null;
+  const reached = launch.status === 'Graduated' || launch.progress >= 100;
+  return (
+    <div className="graduationProof">
+      <b>{launch.status === 'Graduated' ? 'Liquidity seeded' : reached ? 'Ready for graduation transaction' : 'Approaching graduation'}</b>
+      <span>{launch.status === 'Graduated' ? 'Launch-curve trading is closed. Verify pair and LP vault links before trusting liquidity claims.' : 'Creator/operator can seed liquidity once compatibility checks pass.'}</span>
+      <div>
+        {launch.pairAddress && <a href={explorerAddressUrl(launch.pairAddress)} target="_blank" rel="noreferrer">Pair ↗</a>}
+        {launch.lpVault && <a href={explorerAddressUrl(launch.lpVault)} target="_blank" rel="noreferrer">LP vault ↗</a>}
+        <a href="/proof">Proof checklist ↗</a>
+      </div>
+    </div>
+  );
+}
+
 function TokenSkeleton({ address }: { address?: string }) {
   return (
     <section className="panel tokenDetail">
@@ -202,6 +218,7 @@ export function TokenPage({ address }: { address?: string }) {
           </div>
         </div>
         <GraduationStatus launch={launch} />
+        <GraduationProof launch={launch} />
         <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={tradesLoading && !trades.length ? '…' : trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>
         <ReserveChart launch={launch} trades={trades} />
         <div className="tablesGrid"><TradesTable trades={trades} loading={tradesLoading} /><HoldersTable holders={holders} loading={holdersLoading} /></div>

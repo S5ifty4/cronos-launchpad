@@ -1,12 +1,14 @@
+import { lazy, Suspense } from 'react';
 import { AppShell } from './components/AppShell';
-import { AdminPage } from './pages/AdminPage';
-import { CreatePage } from './pages/CreatePage';
-import { CreatorPage } from './pages/CreatorPage';
-import { DocsPage } from './pages/DocsPage';
 import { HomePage } from './pages/HomePage';
-import { LegalPage } from './pages/LegalPage';
-import { ProofPage } from './pages/ProofPage';
-import { TokenPage } from './pages/TokenPage';
+
+const AdminPage = lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })));
+const CreatePage = lazy(() => import('./pages/CreatePage').then((module) => ({ default: module.CreatePage })));
+const CreatorPage = lazy(() => import('./pages/CreatorPage').then((module) => ({ default: module.CreatorPage })));
+const DocsPage = lazy(() => import('./pages/DocsPage').then((module) => ({ default: module.DocsPage })));
+const LegalPage = lazy(() => import('./pages/LegalPage').then((module) => ({ default: module.LegalPage })));
+const ProofPage = lazy(() => import('./pages/ProofPage').then((module) => ({ default: module.ProofPage })));
+const TokenPage = lazy(() => import('./pages/TokenPage').then((module) => ({ default: module.TokenPage })));
 
 function route(pathname: string) {
   if (pathname === '/create') return <CreatePage />;
@@ -24,5 +26,5 @@ function route(pathname: string) {
 }
 
 export function App() {
-  return <AppShell>{route(window.location.pathname)}</AppShell>;
+  return <AppShell><Suspense fallback={<section className="panel"><div className="miniPanel"><p className="eyebrow">Loading</p><h2>Opening page…</h2></div></section>}>{route(window.location.pathname)}</Suspense></AppShell>;
 }

@@ -192,6 +192,10 @@ dt { color: var(--dim); } dd { margin: 0; color: var(--white); overflow-wrap: an
 .graduationStatus h3 { margin: 2px 0 5px; font-size: 22px; }
 .graduationStatus span { color: var(--muted); }
 .graduationStatus b { color: var(--cronos-blue); font-family: 'JetBrains Mono', monospace; font-size: 24px; white-space: nowrap; }
+.graduationProof { display: grid; gap: 10px; margin: -4px 0 18px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: rgba(255,255,255,.035); }
+.graduationProof > span { color: var(--muted); }
+.graduationProof div { display: flex; flex-wrap: wrap; gap: 10px; }
+.graduationProof a { color: var(--cronos-blue); font-size: 13px; }
 .tokenHeader .tokenGlyph { width: 86px; height: 86px; }
 .detailStats { grid-template-columns: repeat(4, 1fr); margin: 18px 0; }
 .chartPanel { height: 300px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(180deg, rgba(76,219,255,.08), rgba(0,0,0,.32)); position: relative; overflow: hidden; }

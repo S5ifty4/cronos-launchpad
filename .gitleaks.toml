@@ -1,0 +1,12 @@
+[allowlist]
+description = "CronosForge false-positive fixtures and env variable names"
+paths = [
+  '''api/launch-metadata\.ts''',
+  '''apps/api/test/launchMetadataHandler\.test\.ts''',
+  '''apps/web/src/app\.test\.ts'''
+]
+regexes = [
+  '''SUPABASE_SERVICE_ROLE_KEY''',
+  '''service-role-key''',
+  '''test-service-role-key'''
+]

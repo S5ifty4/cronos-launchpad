@@ -1,4 +1,4 @@
-import { filterPhase2OrNewerLaunches } from '../contracts/launchpadClient';
+import { fetchOnchainLaunchState, filterPhase2OrNewerLaunches } from '../contracts/launchpadClient';
 import { creatorProfile, launches, proofPackage } from './mock';
 import { fetchSupabaseHolderSnapshots, fetchSupabaseLaunchByAddress, fetchSupabaseLaunches, fetchSupabaseLaunchTrades } from './supabase';
 import type { HolderSnapshot, Launch, Trade } from './types';
@@ -15,6 +15,31 @@ async function fetchOptional<T>(path: string): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+function parseCroAmount(value: string) {
+  const match = value.replace(/,/g, '').match(/[\d.]+/);
+  return match ? Number(match[0]) : 0;
+}
+
+function withLiveLaunchState(launch: Launch, state: Awaited<ReturnType<typeof fetchOnchainLaunchState>>): Launch {
+  if (!state) return launch;
+  const target = parseCroAmount(state.graduationTarget) || 1;
+  const reserve = parseCroAmount(state.reserveRaised);
+  const progress = Math.min(100, Number(((reserve / target) * 100).toFixed(1)));
+  const targetReached = reserve >= target;
+  return {
+    ...launch,
+    reserveRaised: state.reserveRaised,
+    graduationTarget: state.graduationTarget,
+    progress,
+    status: state.graduated ? 'Graduated' : targetReached ? 'Near graduation' : progress >= 85 ? 'Near graduation' : launch.status,
+  };
+}
+
+async function overlayLiveLaunchStates(nextLaunches: Launch[]) {
+  const liveStates = await Promise.all(nextLaunches.map((launch) => fetchOnchainLaunchState(launch.address).catch(() => null)));
+  return nextLaunches.map((launch, index) => withLiveLaunchState(launch, liveStates[index]));
 }
 
 export function getLaunches() {
@@ -40,17 +65,17 @@ export function getProofPackage() {
 
 export async function fetchLaunches(): Promise<Launch[]> {
   const supabaseLaunches = await fetchSupabaseLaunches();
-  if (supabaseLaunches) return filterPhase2OrNewerLaunches(supabaseLaunches);
+  if (supabaseLaunches) return overlayLiveLaunchStates(await filterPhase2OrNewerLaunches(supabaseLaunches));
   const apiLaunches = await fetchOptional<Launch[]>('/launches');
-  if (apiLaunches) return filterPhase2OrNewerLaunches(apiLaunches);
+  if (apiLaunches) return overlayLiveLaunchStates(await filterPhase2OrNewerLaunches(apiLaunches));
   return enableDemoFallback ? launches : [];
 }
 
 export async function fetchLaunchByAddress(address: string): Promise<Launch | null> {
   const supabaseLaunch = await fetchSupabaseLaunchByAddress(address);
-  if (supabaseLaunch) return (await filterPhase2OrNewerLaunches([supabaseLaunch]))[0] ?? null;
+  if (supabaseLaunch) return overlayLiveLaunchStates(await filterPhase2OrNewerLaunches([supabaseLaunch])).then((launches) => launches[0] ?? null);
   const apiLaunch = await fetchOptional<Launch>(`/launches/${address}`);
-  if (apiLaunch) return (await filterPhase2OrNewerLaunches([apiLaunch]))[0] ?? null;
+  if (apiLaunch) return overlayLiveLaunchStates(await filterPhase2OrNewerLaunches([apiLaunch])).then((launches) => launches[0] ?? null);
   return getLaunchByAddress(address) ?? null;
 }
 

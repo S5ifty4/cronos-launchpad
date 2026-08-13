@@ -148,7 +148,7 @@ export function TradePanel({ launch, onConfirmed }: { launch: Launch; onConfirme
       <button className="button primary" disabled={!canTrade} onClick={submitTrade} type="button">
         {targetReached ? 'Trading closed' : status === 'approving' ? 'Approving…' : status === 'simulating' ? 'Checking tx…' : status === 'submitted' ? 'Waiting for confirmation…' : mode === 'buy' ? 'Buy tokens' : 'Sell tokens'}
       </button>
-      <p className="small">Phase 2 factory adds token output on buy, sell redemption, and WCRO-compatible graduation. Old-factory launches cannot use these new functions.</p>
+      <p className="small">Launch trading supports token output on buy, sell redemption, and WCRO-compatible graduation. Earlier test launches may have limited actions.</p>
       {txHash && <p className="small">Tx: <a href={explorerTxUrl(txHash, wallet.chainId)} target="_blank" rel="noreferrer">{shortAddress(txHash)} ↗</a></p>}
       {status === 'confirmed' && <p className="small">{targetReached ? 'Graduation' : mode === 'buy' ? 'Buy' : 'Sell'} confirmed.</p>}
       {error && <p className="small">Wallet: {error}</p>}

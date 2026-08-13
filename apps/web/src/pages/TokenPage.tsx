@@ -132,7 +132,7 @@ export function TokenPage({ address }: { address?: string }) {
             <h2>{launch.name} <span>${launch.symbol}</span></h2>
             <p>{launch.description || 'Launch details are still filling in.'}</p>
             <SocialLinks socials={launch.socials} />
-            <div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Phase 2 trading</Badge></div>
+            <div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Live trading</Badge></div>
           </div>
         </div>
         <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>

@@ -206,17 +206,29 @@ export const filterCurrentPhase2Launches = filterPhase2OrNewerLaunches;
 export async function fetchOnchainLaunchState(tokenAddress: string) {
   const factory = addresses.cronosTestnet.launchpadFactory;
   if (!factory || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) return null;
-  const state = await rpcClient.readContract({
-    address: factory,
-    abi: launchpadFactoryAbi,
-    functionName: 'launchStateByToken',
-    args: [tokenAddress as `0x${string}`],
-  });
+  const [state, config] = await Promise.all([
+    rpcClient.readContract({
+      address: factory,
+      abi: launchpadFactoryAbi,
+      functionName: 'launchStateByToken',
+      args: [tokenAddress as `0x${string}`],
+    }),
+    rpcClient.readContract({
+      address: factory,
+      abi: launchpadFactoryAbi,
+      functionName: 'launchConfigByToken',
+      args: [tokenAddress as `0x${string}`],
+    }),
+  ]);
   const reserveRaisedWei = state[0];
   const graduated = state[1];
+  const graduationTargetWei = config[3];
+  if (config[7].toLowerCase() === zeroAddress) return null;
   return {
     reserveRaisedWei,
+    graduationTargetWei,
     reserveRaised: `${Number(formatEther(reserveRaisedWei)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
+    graduationTarget: `${Number(formatEther(graduationTargetWei)).toLocaleString(undefined, { maximumFractionDigits: 3 })} CRO`,
     graduated,
   };
 }

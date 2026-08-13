@@ -16,14 +16,17 @@ function parseCroAmount(value: string) {
   return match ? Number(match[0]) : 0;
 }
 
-function withReserve(launch: Launch, reserveRaised: string, graduated: boolean): Launch {
-  const target = parseCroAmount(launch.graduationTarget) || 1;
+function withReserve(launch: Launch, reserveRaised: string, graduated: boolean, graduationTarget?: string): Launch {
+  const nextTarget = graduationTarget ?? launch.graduationTarget;
+  const target = parseCroAmount(nextTarget) || 1;
   const reserve = parseCroAmount(reserveRaised);
+  const targetReached = reserve / target >= 1;
   return {
     ...launch,
     reserveRaised,
+    graduationTarget: nextTarget,
     progress: Math.min(100, Number(((reserve / target) * 100).toFixed(1))),
-    status: graduated ? 'Graduated' : reserve / target >= 1 ? 'Near graduation' : reserve / target >= 0.85 ? 'Near graduation' : launch.status,
+    status: graduated ? 'Graduated' : targetReached ? 'Near graduation' : reserve / target >= 0.85 ? 'Near graduation' : launch.status,
   };
 }
 
@@ -31,7 +34,9 @@ function CopyAddressButton({ address }: { address: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
+      aria-label="Copy token address"
       className="copyAddressButton"
+      title={copied ? 'Copied' : 'Copy token address'}
       type="button"
       onClick={() => {
         navigator.clipboard?.writeText(address).then(() => {
@@ -41,7 +46,7 @@ function CopyAddressButton({ address }: { address: string }) {
       }}
     >
       <span>{shortAddress(address)}</span>
-      <b>{copied ? 'Copied' : 'Copy token address'}</b>
+      <b aria-hidden="true">{copied ? '✓' : '⧉'}</b>
     </button>
   );
 }
@@ -69,19 +74,14 @@ export function TokenPage({ address }: { address?: string }) {
   const refreshTokenData = useCallback(() => {
     if (!address) return;
     setLoading(true);
-    fetchLaunchByAddress(address)
-      .then((nextLaunch) => {
-        if (nextLaunch?.address.toLowerCase() === address.toLowerCase()) setIndexedLaunch(nextLaunch);
+    Promise.all([fetchLaunchByAddress(address), fetchOnchainLaunchState(address)])
+      .then(([nextLaunch, state]) => {
+        if (nextLaunch?.address.toLowerCase() !== address.toLowerCase()) return;
+        setIndexedLaunch(state ? withReserve(nextLaunch, state.reserveRaised, state.graduated, state.graduationTarget) : nextLaunch);
       })
       .catch(() => undefined)
       .finally(() => setLoading(false));
     fetchLaunchTrades(address).then(setTrades).catch(() => setTrades([]));
-    fetchOnchainLaunchState(address)
-      .then((state) => {
-        if (!state) return;
-        setIndexedLaunch((current) => current ? withReserve(current, state.reserveRaised, state.graduated) : current);
-      })
-      .catch(() => undefined);
     fetchOnchainBuyEvents(address)
       .then((onchainTrades) => {
         if (onchainTrades.length) setTrades(onchainTrades);
@@ -125,7 +125,16 @@ export function TokenPage({ address }: { address?: string }) {
   return (
     <section className="panel tokenDetail">
       <div className="tokenMainColumn">
-        <div className="tokenHeader"><TokenGlyph launch={launch} size="large" /><div><p className="eyebrow">Token detail</p><h2>{launch.name} <span>${launch.symbol}</span></h2><p>{launch.description || 'Launch details are still filling in.'}</p><CopyAddressButton address={launch.address} /><SocialLinks socials={launch.socials} /><div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Phase 2 trading</Badge></div></div></div>
+        <div className="tokenHeader">
+          <TokenGlyph launch={launch} size="large" />
+          <div>
+            <div className="tokenHeaderMeta"><p className="eyebrow">Token detail</p><CopyAddressButton address={launch.address} /></div>
+            <h2>{launch.name} <span>${launch.symbol}</span></h2>
+            <p>{launch.description || 'Launch details are still filling in.'}</p>
+            <SocialLinks socials={launch.socials} />
+            <div className="badges"><Badge>No tax</Badge><Badge tone={launch.status === 'Graduated' ? 'blue' : launch.status === 'Near graduation' ? 'warn' : 'neutral'}>{launch.status}</Badge><Badge tone="blue">Phase 2 trading</Badge></div>
+          </div>
+        </div>
         <div className="detailStats"><Metric label="reserve raised" value={launch.reserveRaised} /><Metric label="graduation target" value={launch.graduationTarget} /><Metric label="trades" value={trades.length.toString()} /><Metric label="progress" value={`${launch.progress}%`} /></div>
         <ReserveChart launch={launch} trades={trades} />
         <div className="tablesGrid"><TradesTable trades={trades} /><HoldersTable holders={holders} /></div>
